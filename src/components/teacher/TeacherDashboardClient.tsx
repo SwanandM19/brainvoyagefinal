@@ -496,7 +496,7 @@ export default function TeacherDashboardClient({
 
       {/* ── Sidebar ────────────────────────────────────── */}
       <aside className="hidden lg:flex flex-col w-64 bg-white border-r border-[#E5E7EB] flex-shrink-0 h-screen sticky top-0">
-        <div className="h-16 flex items-center px-5 border-b border-[#E5E7EB] gap-3">
+        <div className="h-[100px] flex items-center px-5 border-b border-[#E5E7EB] gap-3">
           <a href="/"
             className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-[#F8F9FA] border border-[#E5E7EB] text-[#6B7280] hover:text-[#f97316] hover:border-orange-200 hover:bg-orange-50 transition-all group text-xs font-bold flex-shrink-0">
             <ChevronLeft size={14} className="group-hover:-translate-x-0.5 transition-transform" />
@@ -560,7 +560,7 @@ export default function TeacherDashboardClient({
       <div className="flex-1 flex flex-col min-h-screen overflow-hidden">
 
         {/* Top bar */}
-        <header className="h-16 bg-white/80 backdrop-blur-md border-b border-[#E5E7EB] flex items-center px-6 gap-4 sticky top-0 z-40">
+        <header className="h-[100px] bg-white/80 backdrop-blur-md border-b border-[#E5E7EB] flex items-center px-6 gap-4 sticky top-0 z-40">
           <div className="lg:hidden flex items-center gap-2">
             <a href="/"
               className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-[#F8F9FA] border border-[#E5E7EB] text-[#6B7280] hover:text-[#f97316] hover:border-orange-200 hover:bg-orange-50 transition-all group text-xs font-bold">

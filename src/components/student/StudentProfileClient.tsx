@@ -55,7 +55,7 @@ export default function StudentProfileClient({ student: initial }: { student: St
     <div className="min-h-screen bg-[#F8F9FA]">
 
       {/* Header */}
-      <header className="h-14 bg-white border-b border-[#E5E7EB] sticky top-0 z-40 flex items-center px-4 sm:px-6 gap-4">
+      <header className="h-[100px] bg-white border-b border-[#E5E7EB] sticky top-0 z-40 flex items-center px-4 sm:px-6 gap-4">
         <button onClick={() => router.back()}
           className="flex items-center gap-2 text-sm font-bold text-[#6B7280] hover:text-[#111827] transition-colors">
           <ArrowLeft size={16} /> Back

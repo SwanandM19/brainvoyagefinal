@@ -21,7 +21,7 @@ export default function LandingNav() {
         scrolled ? 'shadow-md' : 'border-b border-[#E5E7EB]'
       }`}
     >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 h-[100px] flex items-center justify-between">
         <Logo size="md" />
 
         {/* Desktop nav */}

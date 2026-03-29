@@ -18,7 +18,7 @@ export const TEACHER_PLAN = {
   currency:     'INR',
   period:       'monthly',
   interval:     1,
-  name:         'VidyaSangam Teacher Plan',
+  name:         'VidyaSangrah Teacher Plan',
   description:  '₹200/month — Unlimited video uploads & student reach',
   TRIAL_DAYS:   30,           // First month free
 };

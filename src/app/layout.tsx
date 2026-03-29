@@ -5,19 +5,17 @@ import SessionProvider from '@/components/providers/SessionProvider';
 import { Toaster } from 'sonner';
 import './globals.css';
 import '@uploadthing/react/styles.css';
-import LanguageSelector from '@/components/LanguageSwitcher';
-
 
 
 export const metadata: Metadata = {
-  title:       'VidyaSangam — India\'s Learning Community',
+  title: 'VidyaSangrah — India\'s Learning Community',
   description: 'A national platform connecting teachers and students across India through micro-learning videos, gamification, and leaderboards.',
-  keywords:    ['edtech', 'education', 'india', 'students', 'teachers', 'learning'],
-  authors:     [{ name: 'VidyaSangam' }],
+  keywords: ['edtech', 'education', 'india', 'students', 'teachers', 'learning'],
+  authors: [{ name: 'VidyaSangrah' }],
   openGraph: {
-    title:       'VidyaSangam',
+    title: 'VidyaSangrah',
     description: 'India\'s professional educational community for K-12 students and educators.',
-    type:        'website',
+    type: 'website',
   },
 };
 
@@ -42,7 +40,6 @@ export default async function RootLayout({
             }}
           />
         </SessionProvider>
-        <LanguageSelector/>
       </body>
     </html>
   );

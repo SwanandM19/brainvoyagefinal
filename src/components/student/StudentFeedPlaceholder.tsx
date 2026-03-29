@@ -11,7 +11,7 @@ export default function StudentFeedPlaceholder({
 }) {
   return (
     <div className="min-h-screen bg-[#F8F9FA]">
-      <header className="h-16 bg-white border-b border-[#E5E7EB] flex items-center px-6 sticky top-0 z-50">
+      <header className="h-[100px] bg-white border-b border-[#E5E7EB] flex items-center px-6 sticky top-0 z-50">
         <Logo size="sm" />
         <div className="ml-auto flex items-center gap-4">
           <div className="hidden sm:block text-right">

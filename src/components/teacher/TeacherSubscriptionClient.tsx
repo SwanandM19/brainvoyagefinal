@@ -57,7 +57,7 @@ export default function TeacherSubscriptionClient({ teacher }: Props) {
         order_id:    data.orderId,
         amount:      data.amount,
         currency:    data.currency,
-        name:        'VidyaSangam',
+        name:        'VidyaSangrah',
         description: 'Teacher Onboarding Fee — One Time',
         image:       '/logo.png',
         prefill: {

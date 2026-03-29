@@ -9,6 +9,7 @@ import {
   Mail, ArrowRight, RotateCcw, Chrome, Loader2, ChevronLeft,
 } from 'lucide-react';
 import Logo from '@/components/layout/Logo';
+import LanguageSelector from '@/components/FloatingLanguageSwitcher';
 
 type AuthStep = 'email' | 'otp';
 
@@ -168,7 +169,7 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen bg-[#F8F9FA] flex flex-col">
       {/* Top bar */}
-      <header className="h-16 bg-white border-b border-[#E5E7EB] flex items-center px-6">
+      <header className="h-[100px] bg-white border-b border-[#E5E7EB] flex items-center px-6">
         <Logo size="sm" />
         <Link
           href="/"
@@ -191,7 +192,7 @@ export default function LoginPage() {
                 <Mail size={28} className="text-white" />
               </div>
               <h1 className="text-2xl font-extrabold text-white">
-                {step === 'email' ? 'Welcome to VidyaSangam' : 'Enter your code'}
+                {step === 'email' ? 'Welcome to VidyaSangrah' : 'Enter your code'}
               </h1>
               <p className="text-white/80 text-sm mt-2">
                 {step === 'email'
@@ -343,6 +344,7 @@ export default function LoginPage() {
           </div>
         </div>
       </div>
+      <LanguageSelector />
     </div>
   );
 }

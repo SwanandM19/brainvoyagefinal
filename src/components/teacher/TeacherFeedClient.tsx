@@ -20,6 +20,8 @@ import FeedPhotoCard, { type FeedPhoto } from '@/components/teacher/FeedPhotoCar
 import FeedArticleCard, { type FeedArticle } from '@/components/teacher/FeedArticleCard';
 import MyContentPanel, { type OwnVideo } from '@/components/teacher/MyContentPanel';
 import TeacherTour, { isTourDone, resetTour } from '@/components/onboarding/TeacherTour';
+import FeedLanguageSelector from '@/components/FeedLanguageSelector';
+
 
 // ── Types ─────────────────────────────────────────────────
 type Tab = 'feed' | 'myvideos' | 'stats' | 'leaderboard' | 'profile';
@@ -1028,7 +1030,7 @@ export default function TeacherFeedClient({
             <header className="bg-white border-b border-[#E5E7EB] sticky top-0 z-40">
 
                 {/* Row 1 */}
-                <div className="flex items-center px-4 sm:px-6 h-14 gap-4">
+                <div className="flex items-center px-4 sm:px-6 h-[100px] gap-4">
                     <div className="flex items-center gap-2.5 flex-1">
                         <a href="/"
                             className="w-7 h-7 flex items-center justify-center rounded-lg bg-[#F8F9FA] border border-[#E5E7EB] text-[#6B7280] hover:text-[#f97316] hover:border-orange-200 hover:bg-orange-50 transition-all">
@@ -1037,6 +1039,19 @@ export default function TeacherFeedClient({
                         <div className="h-5 w-px bg-[#E5E7EB]" />
                         <Logo size="sm" />
                     </div>
+
+                    {!isMobile && (
+                        <div className="absolute left-1/2 -translate-x-1/2 flex flex-col items-center gap-0.5 pointer-events-none select-none">
+                            <span className="text-[10px] font-extrabold text-[#9CA3AF] uppercase tracking-[0.2em]">
+                                🇮🇳 
+                            </span>
+                            <span className="text-base font-black text-transparent bg-clip-text bg-gradient-to-r from-[#f97316] via-[#f59e0b] to-[#ea580c] whitespace-nowrap">
+                                India's 1st EdTech Community
+                            </span>
+                        </div>
+                    )}
+
+
                     <div className="ml-auto flex items-center gap-2.5">
                         <div className="hidden sm:flex items-center gap-3 bg-[#F8F9FA] border border-[#E5E7EB] px-3 py-1.5 rounded-full">
                             <span className="flex items-center gap-1 text-xs font-extrabold text-[#6B7280]">
@@ -1102,28 +1117,51 @@ export default function TeacherFeedClient({
                 </div>
 
                 {/* Row 2 — FIXED: overflow-x-auto + flex justify-center prevents horizontal scroll on mobile */}
-                <div className="border-t border-[#F3F4F6] overflow-x-auto flex justify-center" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+                <div className="border-t border-[#F3F4F6]">
                     {activeTab === 'feed' ? (
-                        <div className="flex items-center min-w-max px-4 sm:px-6">
-                            <button onClick={() => { setActiveSubject('All'); setFeedType('all'); }}
-                                className={`flex items-center gap-2 px-4 py-3 text-sm font-bold border-b-2 transition-all flex-shrink-0 ${activeSubject === 'All' && feedType === 'all' ? 'border-[#f97316] text-[#f97316]' : 'border-transparent text-[#6B7280] hover:text-[#111827]'}`}>
-                                <Globe size={14} /><span>All</span>
-                                <span className={`text-[10px] font-extrabold px-1.5 py-0.5 rounded-full ${activeSubject === 'All' && feedType === 'all' ? 'bg-orange-50 text-[#f97316]' : 'bg-[#F3F4F6] text-[#9CA3AF]'}`}>
+                        <div className="flex items-center w-full px-2 sm:px-6 sm:justify-center">
+                            <button
+                                onClick={() => { setActiveSubject('All'); setFeedType('all'); }}
+                                className={`flex items-center gap-1.5 px-2 sm:px-4 py-3 text-sm font-bold border-b-2 transition-all flex-shrink-0 ${activeSubject === 'All' && feedType === 'all'
+                                    ? 'border-[#f97316] text-[#f97316]'
+                                    : 'border-transparent text-[#6B7280] hover:text-[#111827]'
+                                    }`}
+                            >
+                                <Globe size={14} />
+                                <span>All</span>
+                                <span className={`text-[10px] font-extrabold px-1.5 py-0.5 rounded-full ${activeSubject === 'All' && feedType === 'all'
+                                    ? 'bg-orange-50 text-[#f97316]'
+                                    : 'bg-[#F3F4F6] text-[#9CA3AF]'
+                                    }`}>
                                     {allFeedItems.length}
                                 </span>
                             </button>
-                            <div className="h-5 w-px bg-[#E5E7EB] mx-2 flex-shrink-0" />
+
+                            <div className="h-5 w-px bg-[#E5E7EB] mx-1 sm:mx-2 flex-shrink-0 hidden sm:block" />
+
                             <SubjectDropdown activeSubject={activeSubject} onSelect={setActiveSubject} />
-                            <div className="h-5 w-px bg-[#E5E7EB] mx-2 flex-shrink-0" />
-                            <button onClick={() => setShowPosting(true)}
-                                className="flex items-center gap-2 px-4 py-3 text-sm font-bold border-b-2 border-transparent text-[#6B7280] hover:text-[#f97316] transition-all flex-shrink-0">
-                                <Upload size={14} className="text-orange-400" /><span>Upload</span>
+
+                            <div className="h-5 w-px bg-[#E5E7EB] mx-1 sm:mx-2 flex-shrink-0 hidden sm:block" />
+
+                            {/* ✅ Icon-only on mobile, icon + text on desktop */}
+                            <button
+                                onClick={() => setShowPosting(true)}
+                                className="flex items-center gap-1.5 px-2 sm:px-4 py-3 text-sm font-bold border-b-2 border-transparent text-[#6B7280] hover:text-[#f97316] transition-all flex-shrink-0"
+                            >
+                                <Upload size={14} className="text-orange-400" />
+                                <span className="hidden sm:inline">Upload</span>
                             </button>
+
+                            <div className="h-5 w-px bg-[#E5E7EB] mx-1 sm:mx-2 flex-shrink-0 hidden sm:block" />
+
+                            <FeedLanguageSelector />
                         </div>
                     ) : (
                         <div className="flex items-center h-[48px] gap-2 w-full px-4 sm:px-6">
-                            <button onClick={() => setActiveTab('feed')}
-                                className="text-xs font-bold text-[#9CA3AF] hover:text-[#f97316] transition-colors flex items-center gap-1">
+                            <button
+                                onClick={() => setActiveTab('feed')}
+                                className="text-xs font-bold text-[#9CA3AF] hover:text-[#f97316] transition-colors flex items-center gap-1"
+                            >
                                 <ChevronLeft size={12} /><span>Feed</span>
                             </button>
                             <span className="text-[#D1D5DB]">/</span>

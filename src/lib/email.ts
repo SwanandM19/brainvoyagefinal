@@ -12,13 +12,13 @@ const transporter = nodemailer.createTransport({
 
 export async function sendOtpEmail(email: string, otp: string): Promise<void> {
   await transporter.sendMail({
-    from:    `"VidyaSangam" <${process.env.EMAIL_FROM}>`,
+    from:    `"VidyaSangrah" <${process.env.EMAIL_FROM}>`,
     to:      email,
-    subject: `${otp} — Your VidyaSangam Login Code`,
+    subject: `${otp} — Your VidyaSangrah Login Code`,
     html: `
       <div style="font-family: Inter, sans-serif; max-width: 480px; margin: 0 auto; padding: 40px 24px; background: #fff;">
         <div style="text-align:center; margin-bottom: 32px;">
-          <span style="font-size:24px; font-weight:800; color:#111827;">VIDYA<span style="color:#f97316;">SANGAM</span></span>
+          <img src="${process.env.NEXTAUTH_URL}/mainlogo.png" alt="VidyaSangrah" style="height: 400px; width: 200px; object-fit: contain; margin: 0 auto; display: block;" />
         </div>
         <h2 style="font-size:20px; font-weight:700; color:#111827; margin-bottom:8px;">Your Login Code</h2>
         <p style="color:#6B7280; font-size:14px; margin-bottom:24px;">

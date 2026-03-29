@@ -11,6 +11,7 @@ import {
   UserCheck, Zap, Award, Menu, X,
 } from 'lucide-react';
 import UsersTable from '@/components/admin/UsersTable';
+import LanguageSelector from '@/components/FloatingLanguageSwitcher';
 
 // ── Interfaces ────────────────────────────────────────────
 interface User {
@@ -77,19 +78,19 @@ export default function AdminDashboardClient({ adminName, adminEmail, stats, rec
   }, []);
 
   const pendingTeacherList = users.filter(u => u.role === 'teacher' && u.teacherStatus === 'pending');
-  const approvedTeachers   = users.filter(u => u.role === 'teacher' && u.teacherStatus === 'approved');
+  const approvedTeachers = users.filter(u => u.role === 'teacher' && u.teacherStatus === 'approved');
 
   const NAV_ITEMS = [
-    { id: 'overview' as Tab, icon: <BarChart3 size={15} />, label: 'Dashboard',         badge: 0 },
-    { id: 'teachers' as Tab, icon: <BookOpen size={15} />,  label: 'Teacher Approvals', badge: pendingTeacherList.length },
-    { id: 'users'    as Tab, icon: <Users size={15} />,     label: 'All Users',          badge: 0 },
+    { id: 'overview' as Tab, icon: <BarChart3 size={15} />, label: 'Dashboard', badge: 0 },
+    { id: 'teachers' as Tab, icon: <BookOpen size={15} />, label: 'Teacher Approvals', badge: pendingTeacherList.length },
+    { id: 'users' as Tab, icon: <Users size={15} />, label: 'All Users', badge: 0 },
   ];
 
   // ← Defined here so header JSX can use it safely
   const TAB_LABELS: Record<Tab, string> = {
     overview: 'Dashboard',
     teachers: 'Teacher Approvals',
-    users:    'All Users',
+    users: 'All Users',
   };
 
   async function handleTeacherAction(userId: string, action: 'approve' | 'reject') {
@@ -138,7 +139,7 @@ export default function AdminDashboardClient({ adminName, adminEmail, stats, rec
             {[
               { label: 'Students', value: fmtNum(stats.totalStudents) },
               { label: 'Teachers', value: fmtNum(stats.totalTeachers) },
-              { label: 'Pending',  value: stats.pendingTeachers },
+              { label: 'Pending', value: stats.pendingTeachers },
             ].map(s => (
               <div key={s.label}>
                 <p className="text-sm font-extrabold text-[#111827]">{s.value}</p>
@@ -153,11 +154,10 @@ export default function AdminDashboardClient({ adminName, adminEmail, stats, rec
       <div className="bg-white rounded-2xl border border-[#EBEBF0] p-2 shadow-sm">
         {NAV_ITEMS.map(item => (
           <button key={item.id} onClick={() => onNavigate(item.id)}
-            className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-semibold transition-all ${
-              activeTab === item.id
+            className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-semibold transition-all ${activeTab === item.id
                 ? 'bg-orange-50 text-orange-600 border border-orange-100'
                 : 'text-[#6B7280] hover:bg-[#F5F6FA] hover:text-[#111827]'
-            }`}>
+              }`}>
             <span className="flex items-center gap-2.5">
               <span className={activeTab === item.id ? 'text-orange-500' : 'text-[#9CA3AF]'}>{item.icon}</span>
               {item.label}
@@ -190,9 +190,9 @@ export default function AdminDashboardClient({ adminName, adminEmail, stats, rec
         </div>
         <div className="p-4 space-y-3">
           {[
-            { label: 'Students', value: fmtNum(stats.totalStudents), icon: <GraduationCap size={13} />, color: 'text-blue-500',   bg: 'bg-blue-50'   },
-            { label: 'Teachers', value: fmtNum(stats.totalTeachers), icon: <BookOpen size={13} />,      color: 'text-orange-500', bg: 'bg-orange-50' },
-            { label: 'Pending',  value: stats.pendingTeachers,        icon: <Clock size={13} />,         color: 'text-amber-500',  bg: 'bg-amber-50'  },
+            { label: 'Students', value: fmtNum(stats.totalStudents), icon: <GraduationCap size={13} />, color: 'text-blue-500', bg: 'bg-blue-50' },
+            { label: 'Teachers', value: fmtNum(stats.totalTeachers), icon: <BookOpen size={13} />, color: 'text-orange-500', bg: 'bg-orange-50' },
+            { label: 'Pending', value: stats.pendingTeachers, icon: <Clock size={13} />, color: 'text-amber-500', bg: 'bg-amber-50' },
           ].map(s => (
             <div key={s.label} className="flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -279,16 +279,11 @@ export default function AdminDashboardClient({ adminName, adminEmail, stats, rec
     <div className="min-h-screen bg-[#F5F6FA]">
 
       {/* ══ NAVBAR ═════════════════════════════════════════ */}
-      <header className="h-14 bg-white border-b border-[#EBEBF0] flex items-center px-4 sm:px-6 gap-2 sticky top-0 z-40 overflow-hidden">
+      <header className="h-[100px] bg-white border-b border-[#EBEBF0] flex items-center px-4 sm:px-6 gap-2 sticky top-0 z-40 overflow-visible">
 
         {/* Logo */}
         <a href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity flex-shrink-0">
-          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-orange-500 to-amber-500 flex items-center justify-center flex-shrink-0">
-            <BookOpen size={14} className="text-white" />
-          </div>
-          <span className="font-extrabold text-sm hidden sm:block">
-            <span className="text-[#f97316]">VIDYA</span><span className="text-[#111827]">SANGAM</span>
-          </span>
+          <img src="/mainlogo.png" alt="VidyaSangrah" style={{ height: 400, width: 200, objectFit: "contain" }} />
         </a>
 
         {/* Center */}
@@ -310,11 +305,10 @@ export default function AdminDashboardClient({ adminName, adminEmail, stats, rec
           <div className="hidden sm:flex items-center gap-1.5 bg-[#F5F6FA] rounded-2xl p-1.5 border border-[#EBEBF0]">
             {NAV_ITEMS.map(item => (
               <button key={item.id} onClick={() => setActiveTab(item.id)}
-                className={`relative flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all whitespace-nowrap ${
-                  activeTab === item.id
+                className={`relative flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all whitespace-nowrap ${activeTab === item.id
                     ? 'bg-white text-[#111827] shadow-sm border border-[#EBEBF0]'
                     : 'text-[#9CA3AF] hover:text-[#374151] hover:bg-white/60'
-                }`}>
+                  }`}>
                 <span className={activeTab === item.id ? 'text-orange-500' : 'text-[#9CA3AF]'}>{item.icon}</span>
                 <span>{item.label}</span>
                 {(item.badge ?? 0) > 0 && (
@@ -459,9 +453,8 @@ export default function AdminDashboardClient({ adminName, adminEmail, stats, rec
                     },
                   ].map(s => (
                     <div key={s.label} onClick={s.onClick}
-                      className={`bg-white rounded-2xl border p-4 shadow-sm transition-all relative overflow-hidden ${
-                        s.onClick ? 'cursor-pointer hover:shadow-md hover:-translate-y-0.5' : ''
-                      } ${s.alert ? 'border-amber-200 ring-2 ring-amber-50' : 'border-[#EBEBF0]'}`}>
+                      className={`bg-white rounded-2xl border p-4 shadow-sm transition-all relative overflow-hidden ${s.onClick ? 'cursor-pointer hover:shadow-md hover:-translate-y-0.5' : ''
+                        } ${s.alert ? 'border-amber-200 ring-2 ring-amber-50' : 'border-[#EBEBF0]'}`}>
                       <div className={`absolute -right-4 -top-4 w-20 h-20 rounded-full bg-gradient-to-br ${s.gradient} opacity-[0.07]`} />
                       <div className="flex items-center justify-between">
                         <div className={`w-9 h-9 rounded-xl bg-gradient-to-br ${s.gradient} flex items-center justify-center shadow-sm`}>
@@ -497,8 +490,8 @@ export default function AdminDashboardClient({ adminName, adminEmail, stats, rec
                       {pendingTeacherList.length > 0
                         ? <span className="bg-amber-100 text-amber-700 text-xs font-extrabold px-2.5 py-1 rounded-full">{pendingTeacherList.length} pending</span>
                         : <span className="bg-green-50 text-green-600 text-xs font-extrabold px-2.5 py-1 rounded-full flex items-center gap-1 border border-green-100">
-                            <CheckCircle size={10} /> All clear
-                          </span>}
+                          <CheckCircle size={10} /> All clear
+                        </span>}
                       <div className="w-7 h-7 rounded-xl bg-[#F5F6FA] group-hover:bg-orange-50 flex items-center justify-center border border-[#EBEBF0] transition-colors">
                         <ChevronRight size={13} className="text-[#9CA3AF] group-hover:text-orange-500 transition-colors" />
                       </div>
@@ -748,7 +741,7 @@ export default function AdminDashboardClient({ adminName, adminEmail, stats, rec
           </button>
         </>
       )}
-
+      <LanguageSelector />
     </div>
   );
 }

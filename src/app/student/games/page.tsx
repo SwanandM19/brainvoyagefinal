@@ -92,7 +92,7 @@ export default function GamesPage() {
             <span className="hidden sm:block">Back</span>
           </a>
           <div className="h-5 w-px bg-[#E5E7EB]" />
-          <Logo size="sm" />
+          {/* <Logo size="sm" /> */}
         </div>
         <div className="ml-auto flex items-center gap-2">
           <div className="flex items-center gap-1.5 bg-gradient-to-r from-orange-50 to-amber-50 border border-orange-100 px-3 py-1.5 rounded-full">

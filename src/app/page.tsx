@@ -7,6 +7,8 @@ import {
   CheckCircle, Zap, Shield, Globe, ChevronRight, Heart, Sun, Moon, Star, Menu, X,
 } from "lucide-react";
 
+import LanguageSelector from '@/components/FloatingLanguageSwitcher';
+
 /* ─── THEME ─────────────────────────────── */
 function useTheme() {
   const [dark, setDark] = useState(false);
@@ -490,10 +492,10 @@ export default function LandingPage() {
     ["Help Centre",      "/help"],
   ];
   const SOCIAL: [string, string][] = [
-    ["Twitter",   "https://twitter.com/vidyasangam"],
-    ["LinkedIn",  "https://linkedin.com/company/vidyasangam"],
-    ["Instagram", "https://instagram.com/vidyasangam"],
-    ["YouTube",   "https://youtube.com/@vidyasangam"],
+    ["Twitter",   "https://twitter.com/vidyasangrah"],
+    ["LinkedIn",  "https://linkedin.com/company/vidyasangrah"],
+    ["Instagram", "https://instagram.com/vidyasangrah"],
+    ["YouTube",   "https://youtube.com/@vidyasangrah"],
   ];
 
   const NAV_LINKS: [string, string][] = [
@@ -512,51 +514,191 @@ export default function LandingPage() {
       <div ref={progressRef} style={{ position: "fixed", top: 0, left: 0, right: 0, height: 2, background: "linear-gradient(90deg,#f97316,#a855f7,#ec4899)", transformOrigin: "left", transform: "scaleX(0)", zIndex: 500 }} />
 
       {/* ── NAV ── */}
-      <nav style={{ position: "fixed", top: 0, left: 0, right: 0, zIndex: 200, background: dark ? "rgba(5,5,11,0.85)" : "rgba(248,249,251,0.88)", backdropFilter: "blur(28px)", borderBottom: `1px solid ${sBd}`, transition: "all 0.5s" }}>
-        <div style={{ maxWidth: 1200, margin: "0 auto", padding: "0 24px", height: 60, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <div style={{ width: 28, height: 28, borderRadius: 8, background: "#f97316", display: "flex", alignItems: "center", justifyContent: "center" }}><BookOpen size={13} color="#fff" /></div>
-            <span style={{ fontWeight: 900, fontSize: 17, color: tP, letterSpacing: "-0.02em" }}>VIDYA<span style={{ color: "#f97316" }}>SANGAM</span></span>
-          </div>
-          <div className="nav-links" style={{ display: "flex", alignItems: "center", gap: 28 }}>
-            {NAV_LINKS.map(([label, href]) => (
-              <a key={label} href={href} style={{ fontSize: 13, fontWeight: 600, color: tM, textDecoration: "none", transition: "color 0.2s" }}
-                onMouseEnter={(e) => (e.currentTarget.style.color = "#f97316")}
-                onMouseLeave={(e) => (e.currentTarget.style.color = tM)}>{label}</a>
-            ))}
-          </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            {/* <button onClick={toggle} className="bmag"
-              style={{ width: 34, height: 34, borderRadius: "50%", border: `1px solid ${cBd}`, background: "transparent", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: tM, transition: "all 0.2s" }}
-              onMouseEnter={(e) => { (e.currentTarget as any).style.borderColor = "#f97316"; (e.currentTarget as any).style.color = "#f97316"; }}
-              onMouseLeave={(e) => { (e.currentTarget as any).style.borderColor = cBd; (e.currentTarget as any).style.color = tM; }}>
-              {dark ? <Sun size={13} /> : <Moon size={13} />}
-            </button> */}
-            <Link href="/auth/login" className="bmag nav-cta"
-              style={{ background: "#f97316", color: "#fff", fontSize: 13, fontWeight: 900, padding: "8px 20px", borderRadius: 99, display: "inline-flex", alignItems: "center", gap: 6, textDecoration: "none", boxShadow: "0 0 24px rgba(249,115,22,0.38)", transition: "opacity 0.2s" }}
-              onMouseEnter={(e) => ((e.currentTarget as any).style.opacity = "0.85")}
-              onMouseLeave={(e) => ((e.currentTarget as any).style.opacity = "1")}>
-              Get Started <ArrowRight size={12} />
-            </Link>
-            <button className="hamburger" onClick={() => setMobileMenu((v) => !v)}
-              style={{ display: "none", width: 34, height: 34, borderRadius: 8, border: `1px solid ${cBd}`, background: "transparent", alignItems: "center", justifyContent: "center", cursor: "pointer", color: tP }}>
-              {mobileMenu ? <X size={16} /> : <Menu size={16} />}
-            </button>
-          </div>
-        </div>
-        {mobileMenu && (
-          <div style={{ background: dark ? "rgba(5,5,11,0.97)" : "rgba(248,249,251,0.97)", backdropFilter: "blur(28px)", borderTop: `1px solid ${sBd}`, padding: "16px 24px 24px", display: "flex", flexDirection: "column", gap: 4 }}>
-            {NAV_LINKS.map(([label, href]) => (
-              <a key={label} href={href} onClick={() => setMobileMenu(false)}
-                style={{ fontSize: 15, fontWeight: 700, color: tP, textDecoration: "none", padding: "12px 0", borderBottom: `1px solid ${sBd}` }}>{label}</a>
-            ))}
-            <Link href="/auth/login" onClick={() => setMobileMenu(false)}
-              style={{ marginTop: 12, background: "#f97316", color: "#fff", fontWeight: 900, fontSize: 14, padding: "13px 0", borderRadius: 14, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, textDecoration: "none" }}>
-              Get Started <ArrowRight size={14} />
-            </Link>
-          </div>
-        )}
-      </nav>
+     <nav
+  style={{
+    position: "fixed",
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 200,
+    background: dark
+      ? "rgba(5,5,11,0.85)"
+      : "rgba(248,249,251,0.88)",
+    backdropFilter: "blur(28px)",
+    borderBottom: `1px solid ${sBd}`,
+    transition: "all 0.5s"
+  }}
+>
+  <div
+    style={{
+      maxWidth: 1200,
+      margin: "0 auto",
+      padding: "0 24px",
+      height: 100, // ⬅ increased navbar height
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "space-between"
+    }}
+  >
+    {/* Logo */}
+    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+      <img
+        src="/mainlogo.png"
+        alt="VidyaSangrah"
+        style={{
+          height: 400, // ⬅ increased logo size
+          width: 200,
+          objectFit: "contain"
+        }}
+      />
+    </div>
+
+    {/* Desktop Navigation Links */}
+    <div
+      className="nav-links"
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 32 // slightly increased spacing
+      }}
+    >
+      {NAV_LINKS.map(([label, href]) => (
+        <a
+          key={label}
+          href={href}
+          style={{
+            fontSize: 14,
+            fontWeight: 600,
+            color: tM,
+            textDecoration: "none",
+            transition: "color 0.2s"
+          }}
+          onMouseEnter={(e) =>
+            (e.currentTarget.style.color = "#f97316")
+          }
+          onMouseLeave={(e) =>
+            (e.currentTarget.style.color = tM)
+          }
+        >
+          {label}
+        </a>
+      ))}
+    </div>
+
+    {/* Right Section */}
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 12
+      }}
+    >
+      {/* CTA Button */}
+      <Link
+        href="/auth/login"
+        className="bmag nav-cta"
+        style={{
+          background: "#f97316",
+          color: "#fff",
+          fontSize: 14,
+          fontWeight: 900,
+          padding: "10px 24px", // ⬅ slightly larger button
+          borderRadius: 99,
+          display: "inline-flex",
+          alignItems: "center",
+          gap: 6,
+          textDecoration: "none",
+          boxShadow: "0 0 24px rgba(249,115,22,0.38)",
+          transition: "opacity 0.2s"
+        }}
+        onMouseEnter={(e) =>
+          ((e.currentTarget as any).style.opacity = "0.85")
+        }
+        onMouseLeave={(e) =>
+          ((e.currentTarget as any).style.opacity = "1")
+        }
+      >
+        Get Started <ArrowRight size={14} />
+      </Link>
+
+      {/* Mobile Hamburger */}
+      <button
+        className="hamburger"
+        onClick={() => setMobileMenu((v) => !v)}
+        style={{
+          display: "none",
+          width: 38,
+          height: 38,
+          borderRadius: 8,
+          border: `1px solid ${cBd}`,
+          background: "transparent",
+          alignItems: "center",
+          justifyContent: "center",
+          cursor: "pointer",
+          color: tP
+        }}
+      >
+        {mobileMenu ? <X size={18} /> : <Menu size={18} />}
+      </button>
+    </div>
+  </div>
+
+  {/* Mobile Menu */}
+  {mobileMenu && (
+    <div
+      style={{
+        background: dark
+          ? "rgba(5,5,11,0.97)"
+          : "rgba(248,249,251,0.97)",
+        backdropFilter: "blur(28px)",
+        borderTop: `1px solid ${sBd}`,
+        padding: "16px 24px 24px",
+        display: "flex",
+        flexDirection: "column",
+        gap: 4
+      }}
+    >
+      {NAV_LINKS.map(([label, href]) => (
+        <a
+          key={label}
+          href={href}
+          onClick={() => setMobileMenu(false)}
+          style={{
+            fontSize: 15,
+            fontWeight: 700,
+            color: tP,
+            textDecoration: "none",
+            padding: "12px 0",
+            borderBottom: `1px solid ${sBd}`
+          }}
+        >
+          {label}
+        </a>
+      ))}
+
+      <Link
+        href="/auth/login"
+        onClick={() => setMobileMenu(false)}
+        style={{
+          marginTop: 12,
+          background: "#f97316",
+          color: "#fff",
+          fontWeight: 900,
+          fontSize: 14,
+          padding: "14px 0",
+          borderRadius: 14,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: 8,
+          textDecoration: "none"
+        }}
+      >
+        Get Started <ArrowRight size={14} />
+      </Link>
+    </div>
+  )}
+</nav>
 
       {/* ── HERO ── */}
       <section className="hsec" style={{ position: "relative", minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden", paddingTop: 60 }}>
@@ -790,8 +932,7 @@ export default function LandingPage() {
           <div className="footer-grid" style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr", gap: 48, paddingBottom: 40, borderBottom: `1px solid ${sBd}` }}>
             <div>
               <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
-                <div style={{ width: 28, height: 28, borderRadius: 8, background: "#f97316", display: "flex", alignItems: "center", justifyContent: "center" }}><BookOpen size={13} color="#fff" /></div>
-                <span style={{ fontWeight: 900, fontSize: 17, color: tP }}>VIDYA<span style={{ color: "#f97316" }}>SANGAM</span></span>
+                <img src="/mainlogo.png" alt="VidyaSangrah" style={{ height: 48, width: "auto", objectFit: "contain" }} />
               </div>
               <p style={{ fontSize: 13, color: tM, maxWidth: 280, lineHeight: 1.72, marginBottom: 10 }}>India's national educational community connecting verified teachers with K-12 students.</p>
               <a href="mailto:team@servexai.in" style={{ fontSize: 11, color: tM, textDecoration: "none" }}>Built by ServexAI · team@servexai.in</a>
@@ -822,7 +963,7 @@ export default function LandingPage() {
             </div>
           </div>
           <div style={{ paddingTop: 28, display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 14 }}>
-            <p style={{ fontSize: 11, fontWeight: 700, color: tM, textTransform: "uppercase", letterSpacing: "0.1em", margin: 0 }}>© 2026 VidyaSangam Education Pvt. Ltd.</p>
+            <p style={{ fontSize: 11, fontWeight: 700, color: tM, textTransform: "uppercase", letterSpacing: "0.1em", margin: 0 }}>© 2026 VidyaSangrah Education Pvt. Ltd.</p>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 20 }}>
               {SOCIAL.map(([label, href]) => (
                 <a key={label} href={href} target="_blank" rel="noopener noreferrer"
@@ -852,6 +993,7 @@ export default function LandingPage() {
           .h-stat-grid { grid-template-columns: repeat(2,1fr) !important; }
         }
       `}</style>
+      <LanguageSelector />
     </div>
   );
 }

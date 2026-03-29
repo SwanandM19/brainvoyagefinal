@@ -135,7 +135,7 @@ export default function VideoPlayer({ video, onClose }: Props) {
 
   const shareUrl = typeof window !== 'undefined'
     ? `${window.location.origin}/student/feed?video=${video.id}`
-    : `https://brain-voyage.vercel.app/student/feed?video=${video.id}`;
+    : `https://vidyasangrah.vercel.app/student/feed?video=${video.id}`;
 
   function ytEmbed(url: string) {
     const m = url.match(/^.*(youtu\.be\/|v\/|embed\/|watch\?v=|&v=)([^#&?]*).*/);
@@ -161,13 +161,13 @@ export default function VideoPlayer({ video, onClose }: Props) {
   }
 
   function handleWhatsApp() {
-    const text = `Check out "${video.title}" on BrainVoyage! 🎓\n${shareUrl}`;
+    const text = `Check out "${video.title}" on VidyaSangrah! 🎓\n${shareUrl}`;
     window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
     setShowShareMenu(false);
   }
 
   function handleTwitter() {
-    const text = `"${video.title}" — Great lesson on BrainVoyage! 📚`;
+    const text = `"${video.title}" — Great lesson on VidyaSangrah! 📚`;
     window.open(
       `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(shareUrl)}`,
       '_blank'
@@ -177,7 +177,7 @@ export default function VideoPlayer({ video, onClose }: Props) {
 
   async function handleNativeShare() {
     try {
-      await navigator.share({ title: video.title, text: `Watch "${video.title}" on BrainVoyage`, url: shareUrl });
+      await navigator.share({ title: video.title, text: `Watch "${video.title}" on VidyaSangrah`, url: shareUrl });
     } catch { /* user cancelled */ }
     setShowShareMenu(false);
   }

@@ -52,8 +52,8 @@ export default function OnboardingPage() {
 
       toast.success(
   role === 'student'
-    ? '🎉 Welcome to VidyaSangam!'
-    : '🎉 Welcome to VidyaSangam! Your teacher account is ready.'  // ✅ CHANGED
+    ? '🎉 Welcome to VidyaSangrah!'
+    : '🎉 Welcome to VidyaSangrah! Your teacher account is ready.'  // ✅ CHANGED
 );
 
       if (role === 'teacher') {
@@ -77,7 +77,7 @@ export default function OnboardingPage() {
   return (
     <div className="min-h-screen bg-[#F8F9FA]">
       {/* Top bar */}
-      <header className="h-16 bg-white border-b border-[#E5E7EB] flex items-center px-6">
+      <header className="h-[100px] bg-white border-b border-[#E5E7EB] flex items-center px-6">
         <Logo size="sm" />
         <div className="ml-auto flex items-center gap-4">
           {session?.user?.email && (
@@ -132,7 +132,7 @@ export default function OnboardingPage() {
           <div className="space-y-6">
             <div className="text-center">
               <h1 className="text-2xl font-extrabold text-[#111827] mb-2">
-                Welcome! How will you use VidyaSangam?
+                Welcome! How will you use VidyaSangrah?
               </h1>
               <p className="text-[#6B7280]">Choose your role to get started. You can't change this later.</p>
             </div>

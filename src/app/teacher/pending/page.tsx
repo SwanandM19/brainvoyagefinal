@@ -7,6 +7,8 @@ import Logo from '@/components/layout/Logo';
 import connectDB from '@/lib/db';
 import User from '@/models/User';
 import Subscription from '@/models/Subscription';
+import LanguageSelector from '@/components/FloatingLanguageSwitcher';
+
 
 export default async function TeacherPendingPage() {
   const session = await getServerSession(authOptions);
@@ -31,7 +33,7 @@ export default async function TeacherPendingPage() {
 
   return (
     <div className="min-h-screen bg-[#F8F9FA]">
-      <header className="h-16 bg-white border-b border-[#E5E7EB] flex items-center px-6">
+      <header className="h-[100px] bg-white border-b border-[#E5E7EB] flex items-center px-6">
         <Logo size="sm" />
         <div className="ml-auto flex items-center gap-4">
           <span className="text-sm text-[#6B7280] hidden sm:block">{session.user.email}</span>
@@ -154,6 +156,7 @@ export default async function TeacherPendingPage() {
           </a>
         </div>
       </div>
+      <LanguageSelector />
     </div>
   );
 }

@@ -1,6 +1,5 @@
 'use client';
 
-
 import { useState, useEffect, useRef, useCallback } from 'react';
 import {
   X, ChevronRight, ChevronLeft, Play, Trophy, BarChart2,
@@ -8,18 +7,20 @@ import {
   HelpCircle,
 } from 'lucide-react';
 
-
-type StepLocation = 'navbar' | 'left-sidebar' | 'right-sidebar';
-
 export const TOUR_STEPS = [
+  {
+    id: 'language',
+    target: 'tour-language',
+    title: '🌐 Change Language',
+    body: 'Switch the entire platform to Hindi, Marathi, Gujarati and more! Click the language button in the filters bar below the navbar to change your language anytime.',
+    position: 'bottom' as const,
+  },
   {
     id: 'feed',
     target: 'tour-feed',
     title: '📡 Community Feed',
     body: 'This is your home! See what teachers across India are posting — videos, articles, and photos. Scroll through and get inspired.',
     position: 'right' as const,
-    mobilePosition: 'bottom' as const,
-    location: 'left-sidebar' as StepLocation,
   },
   {
     id: 'start-posting',
@@ -27,8 +28,6 @@ export const TOUR_STEPS = [
     title: '🚀 Start Posting',
     body: 'This is your most important button! Click here to upload a teaching video, write an article, or share a photo post with students and teachers nationwide.',
     position: 'bottom' as const,
-    mobilePosition: 'bottom' as const,
-    location: 'navbar' as StepLocation,
   },
   {
     id: 'search',
@@ -36,8 +35,6 @@ export const TOUR_STEPS = [
     title: '🔍 Search Anything',
     body: 'Search for any subject, teacher name, or topic. You can also filter by subject using the Subjects button next to the search bar.',
     position: 'bottom' as const,
-    mobilePosition: 'bottom' as const,
-    location: 'navbar' as StepLocation,
   },
   {
     id: 'myvideos',
@@ -45,8 +42,6 @@ export const TOUR_STEPS = [
     title: '🎬 My Videos',
     body: 'All your uploaded videos live here. You can preview, manage, and delete them. Once you upload videos, your views and followers will start growing!',
     position: 'right' as const,
-    mobilePosition: 'bottom' as const,
-    location: 'left-sidebar' as StepLocation,
   },
   {
     id: 'stats',
@@ -54,8 +49,6 @@ export const TOUR_STEPS = [
     title: '📊 Your Stats',
     body: 'Track your total views, followers, likes, and average rating. Your national rank is also shown here — the more you upload, the higher you climb!',
     position: 'right' as const,
-    mobilePosition: 'bottom' as const,
-    location: 'left-sidebar' as StepLocation,
   },
   {
     id: 'leaderboard',
@@ -63,8 +56,6 @@ export const TOUR_STEPS = [
     title: '🏆 Leaderboard',
     body: 'See where you rank among all teachers on VidyaSangam. The top teachers get the most student followers. Compete and grow!',
     position: 'right' as const,
-    mobilePosition: 'bottom' as const,
-    location: 'left-sidebar' as StepLocation,
   },
   {
     id: 'profile',
@@ -72,8 +63,6 @@ export const TOUR_STEPS = [
     title: '⚙️ Your Profile',
     body: 'Edit your bio, subjects, classes, and boards here. A complete profile builds trust with students and helps them find you faster.',
     position: 'right' as const,
-    mobilePosition: 'bottom' as const,
-    location: 'left-sidebar' as StepLocation,
   },
   {
     id: 'mini-leaderboard',
@@ -81,14 +70,10 @@ export const TOUR_STEPS = [
     title: '👑 Top Teachers',
     body: 'This sidebar shows the top 7 teachers by views. Your goal — get to the top! Upload more quality videos to climb the ranks.',
     position: 'left' as const,
-    mobilePosition: 'bottom' as const,
-    location: 'right-sidebar' as StepLocation,
   },
 ];
 
-
 const STORAGE_KEY = 'vs_teacher_tour_done';
-
 
 interface TooltipPos {
   top: number;
@@ -99,7 +84,6 @@ interface TooltipPos {
   spotH: number;
 }
 
-
 interface Props {
   teacherName: string;
   isReplay?: boolean;
@@ -107,10 +91,10 @@ interface Props {
   onUploadVideo?: () => void;
   onGoToProfile?: () => void;
   onGoToFeed?: () => void;
+  /** When true, open the correct mobile drawer so tour targets in sidebars are visible. */
   isMobile?: boolean;
   onMobileDrawer?: (drawer: 'left' | 'right' | 'none') => void;
 }
-
 
 function ArrowIndicator({ position }: { position: string }) {
   const base = 'absolute w-3 h-3 bg-white rotate-45 border border-[#E5E7EB]';
@@ -121,79 +105,79 @@ function ArrowIndicator({ position }: { position: string }) {
   return null;
 }
 
-
-export default function TeacherTour({ teacherName, isReplay = false, onEnd, onUploadVideo, onGoToProfile, onGoToFeed, isMobile = false, onMobileDrawer }: Props) {
+export default function TeacherTour({
+  teacherName,
+  isReplay = false,
+  onEnd,
+  onUploadVideo,
+  onGoToProfile,
+  onGoToFeed,
+  isMobile = false,
+  onMobileDrawer,
+}: Props) {
   const [phase, setPhase] = useState<'welcome' | 'tour' | 'done'>('welcome');
   const [step, setStep] = useState(0);
   const [pos, setPos] = useState<TooltipPos | null>(null);
   const [visible, setVisible] = useState(false);
 
-
   const isScrolling = useRef(false);
   const rafRef = useRef<number | undefined>(undefined);
-  const TOOLTIP_W = isMobile ? Math.min(290, (typeof window !== 'undefined' ? window.innerWidth : 375) - 32) : 320;
+  const TOOLTIP_W = 320;
   const TOOLTIP_H = 210;
   const currentStep = TOUR_STEPS[step];
 
-  // Z-index constants — raised above mobile drawer (z-200) when on mobile
-  const Z_OVERLAY = isMobile ? 300 : 190;
-  const Z_SVG = isMobile ? 301 : 191;
-  const Z_SPOTLIGHT = isMobile ? 302 : 192;
-  const Z_TOOLTIP = isMobile ? 303 : 193;
-
-
   function finish() {
-    // Close any open drawers when tour ends
-    if (isMobile && onMobileDrawer) onMobileDrawer('none');
+    onMobileDrawer?.('none');
     localStorage.setItem(STORAGE_KEY, 'true');
     onEnd();
   }
 
+  useEffect(() => {
+    if (!isMobile || !onMobileDrawer) return;
+    if (phase !== 'tour') {
+      onMobileDrawer('none');
+      return;
+    }
+    const id = TOUR_STEPS[step]?.id;
+    if (id === 'myvideos' || id === 'stats' || id === 'leaderboard' || id === 'profile') {
+      onMobileDrawer('left');
+    } else if (id === 'mini-leaderboard') {
+      onMobileDrawer('right');
+    } else {
+      onMobileDrawer('none');
+    }
+  }, [phase, step, isMobile, onMobileDrawer]);
+
+  useEffect(() => {
+    return () => {
+      onMobileDrawer?.('none');
+    };
+  }, [onMobileDrawer]);
 
   const measure = useCallback(() => {
     if (isScrolling.current) return;
     const el = document.getElementById(currentStep?.target ?? '');
     if (!el) {
-      const vw = window.innerWidth;
-      const vh = window.innerHeight;
       setPos({
-        top: vh / 2 - TOOLTIP_H / 2,
-        left: vw / 2 - TOOLTIP_W / 2,
+        top: window.innerHeight / 2 - TOOLTIP_H / 2,
+        left: window.innerWidth / 2 - TOOLTIP_W / 2,
         spotX: 0, spotY: 0, spotW: 0, spotH: 0,
       });
       return;
     }
-
-
     const rect = el.getBoundingClientRect();
     const vw = window.innerWidth;
     const vh = window.innerHeight;
     const GAP = 16;
-
-    // On mobile, use mobilePosition; on desktop, use position
-    const p: string = isMobile ? currentStep.mobilePosition : currentStep.position;
-
-
+    // Widen so layout branches (e.g. top) stay valid; step union is inferred from TOUR_STEPS only.
+    const p = currentStep.position as 'bottom' | 'top' | 'right' | 'left';
     let top: number, left: number;
-    if (p === 'bottom') {
-      top = rect.bottom + GAP;
-      left = rect.left + rect.width / 2 - TOOLTIP_W / 2;
-    } else if (p === 'top') {
-      top = rect.top - TOOLTIP_H - GAP;
-      left = rect.left + rect.width / 2 - TOOLTIP_W / 2;
-    } else if (p === 'right') {
-      top = rect.top;
-      left = rect.right + GAP;
-    } else {
-      top = rect.top;
-      left = rect.left - TOOLTIP_W - GAP;
-    }
-
-
+    if (p === 'bottom') { top = rect.bottom + GAP; left = rect.left + rect.width / 2 - TOOLTIP_W / 2; }
+    else if (p === 'top') { top = rect.top - TOOLTIP_H - GAP; left = rect.left + rect.width / 2 - TOOLTIP_W / 2; }
+    else if (p === 'right') { top = rect.top; left = rect.right + GAP; }
+    else { top = rect.top; left = rect.left - TOOLTIP_W - GAP; }
     left = Math.max(12, Math.min(left, vw - TOOLTIP_W - 12));
     top = Math.max(12, Math.min(top, vh - TOOLTIP_H - 12));
-
-
     setPos({
       top, left,
       spotX: rect.left - 8,
@@ -201,78 +185,88 @@ export default function TeacherTour({ teacherName, isReplay = false, onEnd, onUp
       spotW: rect.width + 16,
       spotH: rect.height + 16,
     });
-  }, [currentStep, isMobile, TOOLTIP_W]);
+  }, [currentStep]);
 
-
-  const innerTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
+  // ✅ SINGLE useEffect — no duplicates
   useEffect(() => {
     if (phase !== 'tour') return;
     setVisible(false);
     setPos(null);
 
-    // On mobile, open/close the appropriate drawer before measuring
-    if (isMobile && onMobileDrawer) {
-      const loc = currentStep?.location;
-      if (loc === 'left-sidebar') {
-        onMobileDrawer('left');
-      } else if (loc === 'right-sidebar') {
-        onMobileDrawer('right');
-      } else {
-        onMobileDrawer('none');
-      }
-    }
+    let attempts = 0;
+    const maxAttempts = 20;
 
-    // Wait for drawer animation (450ms on mobile) then measure
-    const drawerDelay = isMobile ? 450 : 0;
-
-    const t = setTimeout(() => {
+    const tryFind = () => {
       const el = document.getElementById(currentStep?.target ?? '');
+
+      if (!el && attempts < maxAttempts) {
+        attempts++;
+        setTimeout(tryFind, 100);
+        return;
+      }
+
       if (!el) {
-        const vw = window.innerWidth;
-        const vh = window.innerHeight;
         setPos({
-          top: vh / 2 - TOOLTIP_H / 2,
-          left: vw / 2 - TOOLTIP_W / 2,
+          top: window.innerHeight / 2 - TOOLTIP_H / 2,
+          left: window.innerWidth / 2 - TOOLTIP_W / 2,
           spotX: 0, spotY: 0, spotW: 0, spotH: 0,
         });
         setVisible(true);
         return;
       }
 
+      // Boost navbar above overlay
+      const navbar = document.getElementById('tour-navbar');
+      if (navbar) navbar.style.zIndex = '194';
+
+      // Scroll into view then measure
       isScrolling.current = true;
       el.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' });
 
-      innerTimeoutRef.current = setTimeout(() => {
+      setTimeout(() => {
         isScrolling.current = false;
-        measure();
+        const rect = el.getBoundingClientRect();
+        const vw = window.innerWidth;
+        const vh = window.innerHeight;
+        const GAP = 16;
+        const p = currentStep.position as 'bottom' | 'top' | 'right' | 'left';
+        let top: number, left: number;
+        if (p === 'bottom') { top = rect.bottom + GAP; left = rect.left + rect.width / 2 - TOOLTIP_W / 2; }
+        else if (p === 'top') { top = rect.top - TOOLTIP_H - GAP; left = rect.left + rect.width / 2 - TOOLTIP_W / 2; }
+        else if (p === 'right') { top = rect.top; left = rect.right + GAP; }
+        else { top = rect.top; left = rect.left - TOOLTIP_W - GAP; }
+        left = Math.max(12, Math.min(left, vw - TOOLTIP_W - 12));
+        top = Math.max(12, Math.min(top, vh - TOOLTIP_H - 12));
+        setPos({
+          top, left,
+          spotX: rect.left - 8,
+          spotY: rect.top - 8,
+          spotW: rect.width + 16,
+          spotH: rect.height + 16,
+        });
         setVisible(true);
       }, 500);
-    }, drawerDelay);
-
-    return () => {
-      clearTimeout(t);
-      if (innerTimeoutRef.current) clearTimeout(innerTimeoutRef.current);
     };
-  }, [phase, step]); // eslint-disable-line
 
+    tryFind();
+
+    return () => { isScrolling.current = false; };
+  }, [phase, step]); // eslint-disable-line
 
   useEffect(() => {
     if (phase !== 'tour') return;
     function onResize() {
-      cancelAnimationFrame(rafRef.current!);
+      if (rafRef.current != null) cancelAnimationFrame(rafRef.current);
       rafRef.current = requestAnimationFrame(measure);
     }
     window.addEventListener('resize', onResize);
     return () => {
       window.removeEventListener('resize', onResize);
-      cancelAnimationFrame(rafRef.current!);
+      if (rafRef.current != null) cancelAnimationFrame(rafRef.current);
     };
   }, [phase, measure]);
 
-
   function startTour() { setPhase('tour'); setStep(0); }
-
 
   function next() {
     if (step < TOUR_STEPS.length - 1) {
@@ -280,11 +274,8 @@ export default function TeacherTour({ teacherName, isReplay = false, onEnd, onUp
       setTimeout(() => setStep(s => s + 1), 150);
     } else {
       setPhase('done');
-      // Close drawers when tour finishes
-      if (isMobile && onMobileDrawer) onMobileDrawer('none');
     }
   }
-
 
   function prev() {
     if (step > 0) {
@@ -292,7 +283,6 @@ export default function TeacherTour({ teacherName, isReplay = false, onEnd, onUp
       setTimeout(() => setStep(s => s - 1), 150);
     }
   }
-
 
   // ════════════════════════════════════════════════════════
   // WELCOME MODAL
@@ -349,7 +339,6 @@ export default function TeacherTour({ teacherName, isReplay = false, onEnd, onUp
     );
   }
 
-
   // ════════════════════════════════════════════════════════
   // DONE MODAL
   // ════════════════════════════════════════════════════════
@@ -392,121 +381,85 @@ export default function TeacherTour({ teacherName, isReplay = false, onEnd, onUp
     );
   }
 
-
   // ════════════════════════════════════════════════════════
   // SPOTLIGHT TOUR
   // ════════════════════════════════════════════════════════
-
-  // Determine the effective position for the arrow
-  const effectivePosition = isMobile ? currentStep.mobilePosition : currentStep.position;
-
   return (
     <>
-      <div className="fixed inset-0 pointer-events-none"
-        style={{ background: 'rgba(0,0,0,0.72)', willChange: 'transform', zIndex: Z_OVERLAY }}
+      {/* Dark overlay — lower than language button (z-99999) */}
+      <div className="fixed inset-0 z-[190] pointer-events-none"
+        style={{ background: 'rgba(0,0,0,0.72)' }}
       />
 
-
       {pos && pos.spotW > 0 && (
-        <svg
-          className="fixed inset-0 pointer-events-none"
-          style={{ width: '100vw', height: '100vh', willChange: 'transform', zIndex: Z_SVG }}
-        >
+        <svg className="fixed inset-0 z-[191] pointer-events-none"
+          style={{ width: '100vw', height: '100vh' }}>
           <defs>
             <mask id="tour-mask">
               <rect width="100%" height="100%" fill="white" />
-              <rect
-                x={pos.spotX} y={pos.spotY}
-                width={pos.spotW} height={pos.spotH}
-                rx="12" ry="12"
-                fill="black"
-              />
+              <rect x={pos.spotX} y={pos.spotY} width={pos.spotW} height={pos.spotH} rx="12" ry="12" fill="black" />
             </mask>
           </defs>
-          <rect width="100%" height="100%" fill="transparent" mask="url(#tour-mask)" />
+          <rect width="100%" height="100%" fill="rgba(0,0,0,0)" mask="url(#tour-mask)" />
         </svg>
       )}
 
-
       {pos && pos.spotW > 0 && (
-        <div
-          className="fixed pointer-events-none rounded-xl transition-all duration-300"
+        <div className="fixed z-[192] pointer-events-none rounded-xl"
           style={{
-            top: pos.spotY,
-            left: pos.spotX,
-            width: pos.spotW,
-            height: pos.spotH,
+            top: pos.spotY, left: pos.spotX,
+            width: pos.spotW, height: pos.spotH,
             boxShadow: '0 0 0 3px #f97316, 0 0 20px rgba(249,115,22,0.4)',
-            willChange: 'transform',
-            zIndex: Z_SPOTLIGHT,
           }}
         />
       )}
 
-
-      <div className="fixed inset-0" style={{ zIndex: Z_SPOTLIGHT }} onClick={finish} />
-
+      <div className="fixed inset-0 z-[192]" onClick={finish} />
 
       {pos && (
         <div
           key={currentStep.id}
-          className="fixed transition-all duration-200"
+          className="fixed z-[99998] transition-all duration-200"
           style={{
-            top: pos.top,
-            left: pos.left,
-            width: TOOLTIP_W,
+            top: pos.top, left: pos.left, width: TOOLTIP_W,
             opacity: visible ? 1 : 0,
             transform: `translateY(${visible ? '0px' : '6px'})`,
-            willChange: 'transform, opacity',
-            zIndex: Z_TOOLTIP,
           }}
           onClick={e => e.stopPropagation()}
         >
           <div className="bg-white rounded-2xl shadow-2xl border border-[#E5E7EB] overflow-visible relative">
-            <ArrowIndicator position={effectivePosition} />
+            <ArrowIndicator position={currentStep.position} />
             <div className="h-1 bg-gradient-to-r from-orange-400 to-amber-500 rounded-t-2xl" />
-
 
             <div className="flex items-center justify-between px-4 pt-3 pb-1">
               <div className="flex items-center gap-1">
                 {TOUR_STEPS.map((_, i) => (
-                  <div key={i}
-                    className={`rounded-full transition-all duration-300 ${i === step
-                      ? 'w-5 h-1.5 bg-[#f97316]'
-                      : i < step
-                        ? 'w-1.5 h-1.5 bg-orange-300'
-                        : 'w-1.5 h-1.5 bg-[#E5E7EB]'
-                      }`}
-                  />
+                  <div key={i} className={`rounded-full transition-all duration-300 ${i === step ? 'w-5 h-1.5 bg-[#f97316]' : i < step ? 'w-1.5 h-1.5 bg-orange-300' : 'w-1.5 h-1.5 bg-[#E5E7EB]'
+                    }`} />
                 ))}
               </div>
               <div className="flex items-center gap-2">
                 <span className="text-[10px] font-extrabold text-[#9CA3AF]">
-                  <span>{step + 1}</span><span> / </span><span>{TOUR_STEPS.length}</span>
+                  {step + 1} / {TOUR_STEPS.length}
                 </span>
-                <button onClick={finish}
-                  className="p-1 rounded-lg text-[#9CA3AF] hover:text-[#111827] hover:bg-[#F8F9FA] transition-colors">
+                <button onClick={finish} className="p-1 rounded-lg text-[#9CA3AF] hover:text-[#111827] hover:bg-[#F8F9FA] transition-colors">
                   <X size={13} />
                 </button>
               </div>
             </div>
-
 
             <div className="px-4 pb-2 pt-1">
               <h3 className="font-extrabold text-[#111827] text-sm mb-1">{currentStep.title}</h3>
               <p className="text-xs text-[#6B7280] leading-relaxed">{currentStep.body}</p>
             </div>
 
-
             <div className="flex items-center gap-2 px-4 pb-4 pt-2">
               {step > 0 && (
-                <button onClick={prev}
-                  className="flex items-center gap-1 px-3 py-2 rounded-xl border-2 border-[#E5E7EB] text-[#6B7280] text-xs font-bold hover:bg-[#F8F9FA] transition-colors">
+                <button onClick={prev} className="flex items-center gap-1 px-3 py-2 rounded-xl border-2 border-[#E5E7EB] text-[#6B7280] text-xs font-bold hover:bg-[#F8F9FA] transition-colors">
                   <ChevronLeft size={12} /> <span>Prev</span>
                 </button>
               )}
-              <button onClick={next}
-                className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 text-white text-xs font-extrabold hover:brightness-105 transition-all shadow-sm shadow-orange-200">
+              <button onClick={next} className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 text-white text-xs font-extrabold hover:brightness-105 transition-all shadow-sm shadow-orange-200">
                 {step === TOUR_STEPS.length - 1
                   ? <><CheckCircle size={12} /> <span>Finish Tour</span></>
                   : <><span>{step === 0 ? "Let's go!" : 'Next'}</span> <ChevronRight size={12} /></>}
@@ -519,12 +472,10 @@ export default function TeacherTour({ teacherName, isReplay = false, onEnd, onUp
   );
 }
 
-
 export function isTourDone(): boolean {
   if (typeof window === 'undefined') return true;
   return localStorage.getItem(STORAGE_KEY) === 'true';
 }
-
 
 export function resetTour(): void {
   localStorage.removeItem(STORAGE_KEY);
