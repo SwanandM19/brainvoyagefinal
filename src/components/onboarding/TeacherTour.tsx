@@ -73,6 +73,10 @@ export const TOUR_STEPS = [
   },
 ];
 
+// ✅ FIX 1: Added 'feed' — tour-feed lives inside LeftSidebarContent (left drawer on mobile)
+const LEFT_DRAWER_STEPS  = new Set(['feed', 'myvideos', 'stats', 'leaderboard', 'profile']);
+const RIGHT_DRAWER_STEPS = new Set(['mini-leaderboard']);
+
 const STORAGE_KEY = 'vs_teacher_tour_done';
 
 interface TooltipPos {
@@ -91,7 +95,6 @@ interface Props {
   onUploadVideo?: () => void;
   onGoToProfile?: () => void;
   onGoToFeed?: () => void;
-  /** When true, open the correct mobile drawer so tour targets in sidebars are visible. */
   isMobile?: boolean;
   onMobileDrawer?: (drawer: 'left' | 'right' | 'none') => void;
 }
@@ -99,9 +102,9 @@ interface Props {
 function ArrowIndicator({ position }: { position: string }) {
   const base = 'absolute w-3 h-3 bg-white rotate-45 border border-[#E5E7EB]';
   if (position === 'bottom') return <div className={`${base} -top-1.5 left-1/2 -translate-x-1/2 border-b-0 border-r-0`} />;
-  if (position === 'top') return <div className={`${base} -bottom-1.5 left-1/2 -translate-x-1/2 border-t-0 border-l-0`} />;
-  if (position === 'right') return <div className={`${base} top-6 -left-1.5 -translate-y-1/2 border-r-0 border-t-0`} />;
-  if (position === 'left') return <div className={`${base} top-6 -right-1.5 -translate-y-1/2 border-l-0 border-b-0`} />;
+  if (position === 'top')    return <div className={`${base} -bottom-1.5 left-1/2 -translate-x-1/2 border-t-0 border-l-0`} />;
+  if (position === 'right')  return <div className={`${base} top-6 -left-1.5 -translate-y-1/2 border-r-0 border-t-0`} />;
+  if (position === 'left')   return <div className={`${base} top-6 -right-1.5 -translate-y-1/2 border-l-0 border-b-0`} />;
   return null;
 }
 
@@ -115,14 +118,15 @@ export default function TeacherTour({
   isMobile = false,
   onMobileDrawer,
 }: Props) {
-  const [phase, setPhase] = useState<'welcome' | 'tour' | 'done'>('welcome');
-  const [step, setStep] = useState(0);
-  const [pos, setPos] = useState<TooltipPos | null>(null);
+  const [phase,   setPhase]   = useState<'welcome' | 'tour' | 'done'>('welcome');
+  const [step,    setStep]    = useState(0);
+  const [pos,     setPos]     = useState<TooltipPos | null>(null);
   const [visible, setVisible] = useState(false);
 
   const isScrolling = useRef(false);
-  const rafRef = useRef<number | undefined>(undefined);
-  const TOOLTIP_W = 320;
+  const rafRef      = useRef<number | undefined>(undefined);
+
+  const tooltipW = () => Math.min(320, window.innerWidth - 24);
   const TOOLTIP_H = 210;
   const currentStep = TOUR_STEPS[step];
 
@@ -132,156 +136,129 @@ export default function TeacherTour({
     onEnd();
   }
 
+  // STEP 1: Open correct drawer when step changes (mobile only)
   useEffect(() => {
     if (!isMobile || !onMobileDrawer) return;
-    if (phase !== 'tour') {
-      onMobileDrawer('none');
-      return;
-    }
-    const id = TOUR_STEPS[step]?.id;
-    if (id === 'myvideos' || id === 'stats' || id === 'leaderboard' || id === 'profile') {
-      onMobileDrawer('left');
-    } else if (id === 'mini-leaderboard') {
-      onMobileDrawer('right');
-    } else {
-      onMobileDrawer('none');
-    }
-  }, [phase, step, isMobile, onMobileDrawer]);
+    if (phase !== 'tour') { onMobileDrawer('none'); return; }
+    const id = currentStep?.id ?? '';
+    if (LEFT_DRAWER_STEPS.has(id))       onMobileDrawer('left');
+    else if (RIGHT_DRAWER_STEPS.has(id)) onMobileDrawer('right');
+    else                                  onMobileDrawer('none');
+  }, [phase, step, isMobile, onMobileDrawer]); // eslint-disable-line
 
   useEffect(() => {
-    return () => {
-      onMobileDrawer?.('none');
-    };
+    return () => { onMobileDrawer?.('none'); };
   }, [onMobileDrawer]);
 
-  const measure = useCallback(() => {
-    if (isScrolling.current) return;
-    const el = document.getElementById(currentStep?.target ?? '');
-    if (!el) {
-      setPos({
-        top: window.innerHeight / 2 - TOOLTIP_H / 2,
-        left: window.innerWidth / 2 - TOOLTIP_W / 2,
-        spotX: 0, spotY: 0, spotW: 0, spotH: 0,
-      });
-      return;
-    }
-    const rect = el.getBoundingClientRect();
-    const vw = window.innerWidth;
-    const vh = window.innerHeight;
-    const GAP = 16;
-    // Widen so layout branches (e.g. top) stay valid; step union is inferred from TOUR_STEPS only.
-    const p = currentStep.position as 'bottom' | 'top' | 'right' | 'left';
-    let top: number, left: number;
-    if (p === 'bottom') { top = rect.bottom + GAP; left = rect.left + rect.width / 2 - TOOLTIP_W / 2; }
-    else if (p === 'top') { top = rect.top - TOOLTIP_H - GAP; left = rect.left + rect.width / 2 - TOOLTIP_W / 2; }
-    else if (p === 'right') { top = rect.top; left = rect.right + GAP; }
-    else { top = rect.top; left = rect.left - TOOLTIP_W - GAP; }
-    left = Math.max(12, Math.min(left, vw - TOOLTIP_W - 12));
-    top = Math.max(12, Math.min(top, vh - TOOLTIP_H - 12));
-    setPos({
-      top, left,
-      spotX: rect.left - 8,
-      spotY: rect.top - 8,
-      spotW: rect.width + 16,
-      spotH: rect.height + 16,
-    });
-  }, [currentStep]);
-
-  // ✅ SINGLE useEffect — no duplicates
+  // STEP 2: Find + measure the element — waits for drawer animation on mobile
   useEffect(() => {
     if (phase !== 'tour') return;
     setVisible(false);
     setPos(null);
 
-    let attempts = 0;
-    const maxAttempts = 20;
+    const id = currentStep?.id ?? '';
+    const needsDrawer = isMobile && (LEFT_DRAWER_STEPS.has(id) || RIGHT_DRAWER_STEPS.has(id));
+    const DRAWER_ANIMATION_MS = 450;
 
-    const tryFind = () => {
+    let attempts = 0;
+    const maxAttempts = 30;
+    let cancelled = false;
+
+    const measure = () => {
+      if (cancelled) return;
+      const TW = tooltipW();
       const el = document.getElementById(currentStep?.target ?? '');
 
       if (!el && attempts < maxAttempts) {
         attempts++;
-        setTimeout(tryFind, 100);
+        setTimeout(measure, 100);
         return;
       }
 
       if (!el) {
-        setPos({
-          top: window.innerHeight / 2 - TOOLTIP_H / 2,
-          left: window.innerWidth / 2 - TOOLTIP_W / 2,
-          spotX: 0, spotY: 0, spotW: 0, spotH: 0,
-        });
+        setPos({ top: window.innerHeight / 2 - TOOLTIP_H / 2, left: window.innerWidth / 2 - TW / 2, spotX: 0, spotY: 0, spotW: 0, spotH: 0 });
         setVisible(true);
         return;
       }
 
-      // Boost navbar above overlay
       const navbar = document.getElementById('tour-navbar');
       if (navbar) navbar.style.zIndex = '194';
 
-      // Scroll into view then measure
-      isScrolling.current = true;
-      el.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' });
+      // Don't scrollIntoView for drawer items — they're in a fixed overlay already
+      if (!needsDrawer) {
+        isScrolling.current = true;
+        el.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' });
+      }
 
       setTimeout(() => {
+        if (cancelled) return;
         isScrolling.current = false;
+
         const rect = el.getBoundingClientRect();
         const vw = window.innerWidth;
         const vh = window.innerHeight;
-        const GAP = 16;
-        const p = currentStep.position as 'bottom' | 'top' | 'right' | 'left';
+        const GAP = 12;
+        const TW2 = tooltipW();
+
+        let p = currentStep.position as 'bottom' | 'top' | 'right' | 'left';
+        if (isMobile && p === 'right' && rect.right + GAP + TW2 > vw) p = 'bottom';
+        if (isMobile && p === 'left'  && rect.left  - GAP - TW2 < 0)  p = 'bottom';
+
         let top: number, left: number;
-        if (p === 'bottom') { top = rect.bottom + GAP; left = rect.left + rect.width / 2 - TOOLTIP_W / 2; }
-        else if (p === 'top') { top = rect.top - TOOLTIP_H - GAP; left = rect.left + rect.width / 2 - TOOLTIP_W / 2; }
-        else if (p === 'right') { top = rect.top; left = rect.right + GAP; }
-        else { top = rect.top; left = rect.left - TOOLTIP_W - GAP; }
-        left = Math.max(12, Math.min(left, vw - TOOLTIP_W - 12));
-        top = Math.max(12, Math.min(top, vh - TOOLTIP_H - 12));
-        setPos({
-          top, left,
-          spotX: rect.left - 8,
-          spotY: rect.top - 8,
-          spotW: rect.width + 16,
-          spotH: rect.height + 16,
-        });
+        if      (p === 'bottom') { top = rect.bottom + GAP; left = rect.left + rect.width / 2 - TW2 / 2; }
+        else if (p === 'top')    { top = rect.top - TOOLTIP_H - GAP; left = rect.left + rect.width / 2 - TW2 / 2; }
+        else if (p === 'right')  { top = rect.top; left = rect.right + GAP; }
+        else                     { top = rect.top; left = rect.left - TW2 - GAP; }
+
+        left = Math.max(12, Math.min(left, vw - TW2 - 12));
+        top  = Math.max(12, Math.min(top,  vh - TOOLTIP_H - 12));
+
+        setPos({ top, left, spotX: rect.left - 8, spotY: rect.top - 8, spotW: rect.width + 16, spotH: rect.height + 16 });
         setVisible(true);
-      }, 500);
+      }, needsDrawer ? 0 : 500);
     };
 
-    tryFind();
-
-    return () => { isScrolling.current = false; };
+    const startTimer = setTimeout(measure, needsDrawer ? DRAWER_ANIMATION_MS : 0);
+    return () => { cancelled = true; clearTimeout(startTimer); isScrolling.current = false; };
   }, [phase, step]); // eslint-disable-line
 
+  // Reposition on resize
   useEffect(() => {
     if (phase !== 'tour') return;
-    function onResize() {
+    const onResize = () => {
       if (rafRef.current != null) cancelAnimationFrame(rafRef.current);
-      rafRef.current = requestAnimationFrame(measure);
-    }
-    window.addEventListener('resize', onResize);
-    return () => {
-      window.removeEventListener('resize', onResize);
-      if (rafRef.current != null) cancelAnimationFrame(rafRef.current);
+      rafRef.current = requestAnimationFrame(() => {
+        const TW = tooltipW();
+        const el = document.getElementById(currentStep?.target ?? '');
+        if (!el) return;
+        const rect = el.getBoundingClientRect();
+        const vw = window.innerWidth;
+        const vh = window.innerHeight;
+        const GAP = 12;
+        let p = currentStep.position as 'bottom' | 'top' | 'right' | 'left';
+        if (isMobile && p === 'right' && rect.right + GAP + TW > vw) p = 'bottom';
+        if (isMobile && p === 'left'  && rect.left  - GAP - TW < 0)  p = 'bottom';
+        let top: number, left: number;
+        if      (p === 'bottom') { top = rect.bottom + GAP; left = rect.left + rect.width / 2 - TW / 2; }
+        else if (p === 'top')    { top = rect.top - TOOLTIP_H - GAP; left = rect.left + rect.width / 2 - TW / 2; }
+        else if (p === 'right')  { top = rect.top; left = rect.right + GAP; }
+        else                     { top = rect.top; left = rect.left - TW - GAP; }
+        left = Math.max(12, Math.min(left, vw - TW - 12));
+        top  = Math.max(12, Math.min(top,  vh - TOOLTIP_H - 12));
+        setPos(prev => prev ? { ...prev, top, left, spotX: rect.left - 8, spotY: rect.top - 8, spotW: rect.width + 16, spotH: rect.height + 16 } : prev);
+      });
     };
-  }, [phase, measure]);
+    window.addEventListener('resize', onResize);
+    return () => { window.removeEventListener('resize', onResize); if (rafRef.current != null) cancelAnimationFrame(rafRef.current); };
+  }, [phase, step, isMobile]); // eslint-disable-line
 
   function startTour() { setPhase('tour'); setStep(0); }
-
   function next() {
-    if (step < TOUR_STEPS.length - 1) {
-      setVisible(false);
-      setTimeout(() => setStep(s => s + 1), 150);
-    } else {
-      setPhase('done');
-    }
+    if (step < TOUR_STEPS.length - 1) { setVisible(false); setTimeout(() => setStep(s => s + 1), 150); }
+    else setPhase('done');
   }
-
   function prev() {
-    if (step > 0) {
-      setVisible(false);
-      setTimeout(() => setStep(s => s - 1), 150);
-    }
+    if (step > 0) { setVisible(false); setTimeout(() => setStep(s => s - 1), 150); }
   }
 
   // ════════════════════════════════════════════════════════
@@ -308,10 +285,10 @@ export default function TeacherTour({
             <p className="text-xs font-extrabold text-[#9CA3AF] uppercase tracking-widest text-center mb-4">Here's what you can do</p>
             <div className="space-y-3">
               {[
-                { icon: <Video size={16} className="text-orange-400" />, bg: 'bg-orange-50', title: 'Upload Teaching Videos', body: 'Share your knowledge with students across India' },
-                { icon: <Trophy size={16} className="text-yellow-500" />, bg: 'bg-yellow-50', title: 'Rank on National Board', body: 'Get more views & followers to climb the leaderboard' },
-                { icon: <BarChart2 size={16} className="text-blue-500" />, bg: 'bg-blue-50', title: 'Track Your Growth', body: 'See your views, likes, and follower stats live' },
-                { icon: <BookOpen size={16} className="text-green-500" />, bg: 'bg-green-50', title: 'Share Articles & Posts', body: 'Write tips, notes, and announcements for students' },
+                { icon: <Video size={16} className="text-orange-400" />,   bg: 'bg-orange-50', title: 'Upload Teaching Videos', body: 'Share your knowledge with students across India'      },
+                { icon: <Trophy size={16} className="text-yellow-500" />,  bg: 'bg-yellow-50', title: 'Rank on National Board',  body: 'Get more views & followers to climb the leaderboard' },
+                { icon: <BarChart2 size={16} className="text-blue-500" />, bg: 'bg-blue-50',   title: 'Track Your Growth',       body: 'See your views, likes, and follower stats live'       },
+                { icon: <BookOpen size={16} className="text-green-500" />, bg: 'bg-green-50',  title: 'Share Articles & Posts',  body: 'Write tips, notes, and announcements for students'    },
               ].map(f => (
                 <div key={f.title} className="flex items-center gap-3 p-3 rounded-xl hover:bg-[#F8F9FA] transition-colors">
                   <div className={`w-8 h-8 ${f.bg} rounded-xl flex items-center justify-center flex-shrink-0`}>{f.icon}</div>
@@ -326,12 +303,11 @@ export default function TeacherTour({
           <div className="px-6 pb-6 space-y-2.5">
             <button onClick={startTour}
               className="w-full py-3 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 text-white font-extrabold text-sm shadow-md shadow-orange-200 hover:brightness-105 transition-all flex items-center justify-center gap-2">
-              <Play size={15} fill="white" />
-              <span>Take a Quick Tour (2 min)</span>
+              <Play size={15} fill="white" /><span>Take a Quick Tour (2 min)</span>
             </button>
             <button onClick={finish}
               className="w-full py-2.5 rounded-xl border-2 border-[#E5E7EB] text-[#6B7280] font-bold text-sm hover:bg-[#F8F9FA] transition-colors">
-              <span>Skip for now</span>
+              Skip for now
             </button>
           </div>
         </div>
@@ -344,25 +320,21 @@ export default function TeacherTour({
   // ════════════════════════════════════════════════════════
   if (phase === 'done') {
     return (
-      <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
-        onClick={finish}>
-        <div className="bg-white rounded-3xl shadow-2xl w-full max-w-sm overflow-hidden"
-          onClick={e => e.stopPropagation()}>
+      <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={finish}>
+        <div className="bg-white rounded-3xl shadow-2xl w-full max-w-sm overflow-hidden" onClick={e => e.stopPropagation()}>
           <div className="bg-gradient-to-br from-green-400 to-emerald-500 px-8 py-8 text-center">
             <div className="w-16 h-16 rounded-2xl bg-white/20 flex items-center justify-center mx-auto mb-3 shadow-lg">
               <CheckCircle size={32} className="text-white" />
             </div>
-            <h2 className="text-2xl font-extrabold text-white mb-1">
-              <span>You're all set! 🎉</span>
-            </h2>
+            <h2 className="text-2xl font-extrabold text-white mb-1">You're all set! 🎉</h2>
             <p className="text-white/70 text-sm">Now go make an impact on students across India</p>
           </div>
           <div className="px-6 py-5 space-y-2.5">
             <p className="text-xs font-extrabold text-[#9CA3AF] uppercase tracking-widest text-center mb-3">What's next?</p>
             {[
-              { emoji: '📹', label: 'Upload your first video', action: () => { finish(); onUploadVideo?.(); } },
-              { emoji: '✏️', label: 'Complete your profile', action: () => { finish(); onGoToProfile?.(); } },
-              { emoji: '🌐', label: 'Explore the community feed', action: () => { finish(); onGoToFeed?.(); } },
+              { emoji: '📹', label: 'Upload your first video',    action: () => { finish(); onUploadVideo?.(); } },
+              { emoji: '✏️', label: 'Complete your profile',      action: () => { finish(); onGoToProfile?.(); } },
+              { emoji: '🌐', label: 'Explore the community feed', action: () => { finish(); onGoToFeed?.();    } },
             ].map(a => (
               <button key={a.label} onClick={a.action}
                 className="w-full flex items-center gap-3 px-4 py-3 rounded-xl border-2 border-[#E5E7EB] hover:border-orange-300 hover:bg-orange-50 transition-all text-left group">
@@ -373,7 +345,7 @@ export default function TeacherTour({
             ))}
             <button onClick={finish}
               className="w-full py-3 mt-1 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 text-white font-extrabold text-sm shadow-md shadow-orange-200 hover:brightness-105 transition-all">
-              <span>Go to My Feed 🚀</span>
+              Go to My Feed 🚀
             </button>
           </div>
         </div>
@@ -384,44 +356,62 @@ export default function TeacherTour({
   // ════════════════════════════════════════════════════════
   // SPOTLIGHT TOUR
   // ════════════════════════════════════════════════════════
+  const TW = tooltipW();
+
   return (
     <>
-      {/* Dark overlay — lower than language button (z-99999) */}
-      <div className="fixed inset-0 z-[190] pointer-events-none"
-        style={{ background: 'rgba(0,0,0,0.72)' }}
-      />
+      {/*
+       * ✅ FIX 2: THE BOX-SHADOW SPOTLIGHT TRICK
+       *
+       * Why the old approach failed inside drawers:
+       *   - Dark overlay was at z-190, ring at z-192
+       *   - The mobile drawer is at z-250 (when tourControllingDrawer=true)
+       *   - So the overlay and ring painted BEHIND the drawer — invisible
+       *
+       * Why this works:
+       *   - ONE div positioned exactly over the target element
+       *   - background: transparent → the target element shows through regardless of its z-index
+       *   - box-shadow outward 9999px → creates the dark tint covering EVERYTHING else,
+       *     including the drawer content (z-9999 > z-250)
+       *   - The orange ring is the second layer of the box-shadow
+       *   - Works for main page AND sidebar drawers with no z-index switching needed
+       */}
 
-      {pos && pos.spotW > 0 && (
-        <svg className="fixed inset-0 z-[191] pointer-events-none"
-          style={{ width: '100vw', height: '100vh' }}>
-          <defs>
-            <mask id="tour-mask">
-              <rect width="100%" height="100%" fill="white" />
-              <rect x={pos.spotX} y={pos.spotY} width={pos.spotW} height={pos.spotH} rx="12" ry="12" fill="black" />
-            </mask>
-          </defs>
-          <rect width="100%" height="100%" fill="rgba(0,0,0,0)" mask="url(#tour-mask)" />
-        </svg>
+      {/* Fallback full-screen overlay when element not yet found */}
+      {(!pos || pos.spotW === 0) && (
+        <div
+          className="fixed inset-0 pointer-events-none"
+          style={{ zIndex: 9997, background: 'rgba(0,0,0,0.72)' }}
+        />
       )}
 
+      {/* Click anywhere to close — sits above drawer (z-250) but below spotlight */}
+      <div className="fixed inset-0" style={{ zIndex: 9998 }} onClick={finish} />
+
+      {/* Spotlight: transparent box with outward shadow = dark tint + hole + ring */}
       {pos && pos.spotW > 0 && (
-        <div className="fixed z-[192] pointer-events-none rounded-xl"
+        <div
+          className="fixed pointer-events-none rounded-xl"
           style={{
-            top: pos.spotY, left: pos.spotX,
-            width: pos.spotW, height: pos.spotH,
-            boxShadow: '0 0 0 3px #f97316, 0 0 20px rgba(249,115,22,0.4)',
+            zIndex: 9999,
+            top:    pos.spotY,
+            left:   pos.spotX,
+            width:  pos.spotW,
+            height: pos.spotH,
+            background: 'transparent',
+            boxShadow: '0 0 0 9999px rgba(0,0,0,0.72), 0 0 0 3px #f97316, 0 0 24px rgba(249,115,22,0.5)',
           }}
         />
       )}
 
-      <div className="fixed inset-0 z-[192]" onClick={finish} />
-
+      {/* Tooltip — always on top of everything */}
       {pos && (
         <div
           key={currentStep.id}
-          className="fixed z-[99998] transition-all duration-200"
+          className="fixed transition-all duration-200"
           style={{
-            top: pos.top, left: pos.left, width: TOOLTIP_W,
+            zIndex: 99998,
+            top: pos.top, left: pos.left, width: TW,
             opacity: visible ? 1 : 0,
             transform: `translateY(${visible ? '0px' : '6px'})`,
           }}
@@ -434,14 +424,13 @@ export default function TeacherTour({
             <div className="flex items-center justify-between px-4 pt-3 pb-1">
               <div className="flex items-center gap-1">
                 {TOUR_STEPS.map((_, i) => (
-                  <div key={i} className={`rounded-full transition-all duration-300 ${i === step ? 'w-5 h-1.5 bg-[#f97316]' : i < step ? 'w-1.5 h-1.5 bg-orange-300' : 'w-1.5 h-1.5 bg-[#E5E7EB]'
-                    }`} />
+                  <div key={i} className={`rounded-full transition-all duration-300 ${
+                    i === step ? 'w-5 h-1.5 bg-[#f97316]' : i < step ? 'w-1.5 h-1.5 bg-orange-300' : 'w-1.5 h-1.5 bg-[#E5E7EB]'
+                  }`} />
                 ))}
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-[10px] font-extrabold text-[#9CA3AF]">
-                  {step + 1} / {TOUR_STEPS.length}
-                </span>
+                <span className="text-[10px] font-extrabold text-[#9CA3AF]">{step + 1} / {TOUR_STEPS.length}</span>
                 <button onClick={finish} className="p-1 rounded-lg text-[#9CA3AF] hover:text-[#111827] hover:bg-[#F8F9FA] transition-colors">
                   <X size={13} />
                 </button>
@@ -456,13 +445,13 @@ export default function TeacherTour({
             <div className="flex items-center gap-2 px-4 pb-4 pt-2">
               {step > 0 && (
                 <button onClick={prev} className="flex items-center gap-1 px-3 py-2 rounded-xl border-2 border-[#E5E7EB] text-[#6B7280] text-xs font-bold hover:bg-[#F8F9FA] transition-colors">
-                  <ChevronLeft size={12} /> <span>Prev</span>
+                  <ChevronLeft size={12} /><span>Prev</span>
                 </button>
               )}
               <button onClick={next} className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 text-white text-xs font-extrabold hover:brightness-105 transition-all shadow-sm shadow-orange-200">
                 {step === TOUR_STEPS.length - 1
-                  ? <><CheckCircle size={12} /> <span>Finish Tour</span></>
-                  : <><span>{step === 0 ? "Let's go!" : 'Next'}</span> <ChevronRight size={12} /></>}
+                  ? <><CheckCircle size={12} /><span>Finish Tour</span></>
+                  : <><span>{step === 0 ? "Let's go!" : 'Next'}</span><ChevronRight size={12} /></>}
               </button>
             </div>
           </div>

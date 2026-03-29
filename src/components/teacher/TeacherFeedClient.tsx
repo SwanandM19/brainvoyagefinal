@@ -21,10 +21,13 @@ import FeedArticleCard, { type FeedArticle } from '@/components/teacher/FeedArti
 import MyContentPanel, { type OwnVideo } from '@/components/teacher/MyContentPanel';
 import TeacherTour, { isTourDone, resetTour } from '@/components/onboarding/TeacherTour';
 import FeedLanguageSelector from '@/components/FeedLanguageSelector';
+// import HelpModal from "@/components/HelpModal";
+import HelpView from '@/components/HelpView'
 
 
 // ── Types ─────────────────────────────────────────────────
-type Tab = 'feed' | 'myvideos' | 'stats' | 'leaderboard' | 'profile';
+// type Tab = 'feed' | 'myvideos' | 'stats' | 'leaderboard' | 'profile';
+type Tab = 'feed' | 'myvideos' | 'stats' | 'leaderboard' | 'profile' | 'help'
 type FeedType = 'all' | 'video' | 'photo' | 'article';
 
 interface CommunityPost {
@@ -335,6 +338,7 @@ export default function TeacherFeedClient({
     const [mobileRightOpen, setMobileRightOpen] = useState(false);
 
     const [showTour, setShowTour] = useState(false);
+    // const [showHelp, setShowHelp] = useState(false);
     const [tourControllingDrawer, setTourControllingDrawer] = useState(false);
 
     const handleTourDrawer = useCallback((drawer: 'left' | 'right' | 'none') => {
@@ -762,7 +766,8 @@ export default function TeacherFeedClient({
     }
 
     // ── Left Sidebar Content (shared between desktop & mobile overlay) ──
-    const LeftSidebarContent = ({ onNavigate }: { onNavigate: (t: Tab) => void }) => (
+    // const LeftSidebarContent = ({ onNavigate, onHelp }: { onNavigate: (t: Tab) => void; onHelp?: () => void }) => (
+    const LeftSidebarContent = ({ onNavigate, activeTab }: { onNavigate: (t: Tab) => void; activeTab: Tab }) => (
         <>
             {/* Teacher profile card */}
             <div className="bg-white rounded-2xl border border-[#E5E7EB] shadow-sm overflow-hidden">
@@ -804,7 +809,6 @@ export default function TeacherFeedClient({
                         { id: 'myvideos', icon: '🎬', label: 'My Content' },
                         { id: 'stats', icon: '📊', label: 'Stats' },
                         { id: 'leaderboard', icon: '🏆', label: 'Leaderboard' },
-                        { id: 'profile', icon: '⚙️', label: 'Profile' },
                     ] as { id: Tab; icon: string; label: string }[]).map(item => (
                         <button key={item.id}
                             id={`tour-${item.id}`}
@@ -820,6 +824,33 @@ export default function TeacherFeedClient({
                             {activeTab === item.id && item.id !== 'myvideos' && <span className="ml-auto w-1.5 h-1.5 rounded-full bg-orange-400" />}
                         </button>
                     ))}
+
+                    {/* ── Divider ───────────────────────────────── */}
+                    <div className="h-px bg-[#F3F4F6] mx-1 my-1" />
+
+                    {/* ── Help & Tutorials button ───────────────── */}
+                    <button
+                        id="tour-help"
+                        onClick={() => onNavigate('help')}
+                        className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all w-full text-left ${
+                            activeTab === 'help'
+                                ? 'bg-orange-50 text-[#f97316]'
+                                : 'text-[#6B7280] hover:bg-[#F8F9FA] hover:text-[#111827]'
+                        }`}>
+                        <span className="text-base">❓</span>
+                        <span>Help & Tutorials</span>
+                        {activeTab === 'help' && <span className="ml-auto w-1.5 h-1.5 rounded-full bg-orange-400" />}
+                    </button>
+
+                    {/* ── Profile button ────────────────────────── */}
+                    <button
+                        id="tour-profile"
+                        onClick={() => onNavigate('profile')}
+                        className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all w-full text-left ${activeTab === 'profile' ? 'bg-orange-50 text-[#f97316]' : 'text-[#6B7280] hover:bg-[#F8F9FA] hover:text-[#111827]'}`}>
+                        <span className="text-base">⚙️</span>
+                        <span>Profile</span>
+                        {activeTab === 'profile' && <span className="ml-auto w-1.5 h-1.5 rounded-full bg-orange-400" />}
+                    </button>
                 </div>
             </div>
 
@@ -999,6 +1030,7 @@ export default function TeacherFeedClient({
                     }}
                 />
             )}
+            
             {previewOwnVideo && (
                 <VideoPlayerModal
                     video={{ title: previewOwnVideo.title, teacherName: teacher.name, subject: previewOwnVideo.subject, videoUrl: previewOwnVideo.videoUrl, views: previewOwnVideo.views, rating: previewOwnVideo.rating, classes: previewOwnVideo.classes, boards: previewOwnVideo.boards }}
@@ -1041,11 +1073,8 @@ export default function TeacherFeedClient({
                     </div>
 
                     {!isMobile && (
-                        <div className="absolute left-1/2 -translate-x-1/2 flex flex-col items-center gap-0.5 pointer-events-none select-none">
-                            <span className="text-[10px] font-extrabold text-[#9CA3AF] uppercase tracking-[0.2em]">
-                                🇮🇳 
-                            </span>
-                            <span className="text-base font-black text-transparent bg-clip-text bg-gradient-to-r from-[#f97316] via-[#f59e0b] to-[#ea580c] whitespace-nowrap">
+                        <div className="absolute left-138 -translate-x-1/2 flex flex-col items-center gap-0.5 pointer-events-none select-none">
+                            <span className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-[#f97316] via-[#f59e0b] to-[#ea580c] whitespace-nowrap tracking-tight">
                                 India's 1st EdTech Community
                             </span>
                         </div>
@@ -1166,7 +1195,7 @@ export default function TeacherFeedClient({
                             </button>
                             <span className="text-[#D1D5DB]">/</span>
                             <span className="text-xs font-extrabold text-[#111827]">
-                                {{ myvideos: 'My Content', stats: 'Stats', leaderboard: 'Leaderboard', profile: 'Profile' }[activeTab]}
+                                {{ myvideos: 'My Content', stats: 'Stats', leaderboard: 'Leaderboard', profile: 'Profile', help: 'Help' }[activeTab]}
                             </span>
                         </div>
                     )}
@@ -1245,7 +1274,9 @@ export default function TeacherFeedClient({
                     {/* ── LEFT SIDEBAR — desktop only (JS-controlled) ── */}
                     {!isMobile && (
                         <aside className="flex flex-col w-72 flex-shrink-0 gap-4 sticky top-[153px] self-start">
-                            <LeftSidebarContent onNavigate={setActiveTab} />
+                            {/* <LeftSidebarContent onNavigate={setActiveTab} /> */}
+                            {/* <LeftSidebarContent onNavigate={setActiveTab} onHelp={() => setShowHelp(true)} /> */}
+                            <LeftSidebarContent onNavigate={setActiveTab} activeTab={activeTab} />
                         </aside>
                     )}
 
@@ -1434,6 +1465,9 @@ export default function TeacherFeedClient({
                         {activeTab === 'stats' && <StatsPanel />}
                         {activeTab === 'leaderboard' && <TeacherLeaderboard currentTeacherId={teacher.id} />}
                         {activeTab === 'profile' && <ProfilePanel />}
+                        {activeTab === 'help' && (
+                            <HelpView onReplayTour={() => { resetTour(); setShowTour(true); }} />
+                        )}
                     </div>
 
                     {/* ── RIGHT SIDEBAR — desktop only (JS-controlled) ── */}
@@ -1525,7 +1559,9 @@ export default function TeacherFeedClient({
                             flex: 1, overflowY: 'auto', padding: 16,
                             display: 'flex', flexDirection: 'column', gap: 12,
                         }}>
-                            <LeftSidebarContent onNavigate={mobileNavigate} />
+                            {/* <LeftSidebarContent onNavigate={mobileNavigate} /> */}
+                            {/* <LeftSidebarContent onNavigate={mobileNavigate} onHelp={() => { setShowHelp(true); setMobileLeftOpen(false); }} /> */}
+                            <LeftSidebarContent onNavigate={mobileNavigate} activeTab={activeTab} />
                         </div>
                     </div>
                 </div>

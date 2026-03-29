@@ -9,12 +9,18 @@ export async function proxy(req: NextRequest) {
   const alwaysPublic = [
     '/_next',
     '/favicon.ico',
-    '/api',           // ✅ ALL api routes pass through freely
+    '/api',
     '/auth',
     '/unauthorized',
+    '/images',        // ✅ public/images/ folder (logos, icons, etc.)
   ];
 
-  if (alwaysPublic.some((p) => pathname.startsWith(p)) || pathname === '/') {
+  if (
+    alwaysPublic.some((p) => pathname.startsWith(p)) ||
+    pathname === '/' ||
+    // ✅ Allow any static file extension at root level
+    /\.(png|jpg|jpeg|svg|webp|ico|gif|woff|woff2|ttf|otf)$/i.test(pathname)
+  ) {
     return NextResponse.next();
   }
 
@@ -67,5 +73,6 @@ export async function proxy(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],
+  // ✅ Also exclude image/font extensions right in the matcher
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|.*\\.png|.*\\.jpg|.*\\.jpeg|.*\\.svg|.*\\.webp|.*\\.gif|.*\\.ico|.*\\.woff2?).*)',],
 };

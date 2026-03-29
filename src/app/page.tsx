@@ -8,6 +8,8 @@ import {
 } from "lucide-react";
 
 import LanguageSelector from '@/components/FloatingLanguageSwitcher';
+import Logo from '@/components/layout/Logo';
+import Image from 'next/image'
 
 /* ─── THEME ─────────────────────────────── */
 function useTheme() {
@@ -552,6 +554,7 @@ export default function LandingPage() {
         }}
       />
     </div>
+    {/* <Logo size="sm" /> */}
 
     {/* Desktop Navigation Links */}
     <div
