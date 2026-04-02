@@ -2381,59 +2381,59 @@ export default function TeacherFeedClient({
                         )}
                         {/* ✅ NEW — Renew Autopay button shown when cancelled */}
                         {subInfo.status === 'cancelled' && (
-  <div className="mt-3 pt-3 border-t border-F3F4F6">
-    <button
-      onClick={async () => {
-        if (!confirm('Reactivate your subscription? You will be charged ₹200/month.')) return;
-        try {
-          const res  = await fetch('/api/subscription/reactivate', { method: 'POST' });
-          const data = await res.json();
+                            <div className="mt-3 pt-3 border-t border-F3F4F6">
+                                <button
+                                    onClick={async () => {
+                                        if (!confirm('Reactivate your subscription? You will be charged ₹200/month.')) return;
+                                        try {
+                                            const res = await fetch('/api/subscription/reactivate', { method: 'POST' });
+                                            const data = await res.json();
 
-          if (!res.ok) {
-            alert(data.error ?? 'Failed. Please contact support.');
-            return;
-          }
+                                            if (!res.ok) {
+                                                alert(data.error ?? 'Failed. Please contact support.');
+                                                return;
+                                            }
 
-          // ✅ Open Razorpay checkout with new subscription
-          const Razorpay = (window as any).Razorpay;
-          const rzp = new Razorpay({
-            key:          data.razorpayKeyId,
-            subscription_id: data.subscriptionId,
-            name:         'VidyaSangrah',
-            description:  '₹200/month Teacher Subscription',
-            handler:      async (response: any) => {
-              // Verify payment
-              const verifyRes = await fetch('/api/subscription/verify', {
-                method:  'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body:    JSON.stringify({
-                  razorpay_subscription_id: response.razorpay_subscription_id,
-                  razorpay_payment_id:      response.razorpay_payment_id,
-                  razorpay_signature:       response.razorpay_signature,
-                }),
-              });
-              if (verifyRes.ok) {
-                setSubInfo(prev => ({ ...prev, status: 'active' }));
-                alert('Subscription reactivated successfully! ✅');
-              } else {
-                alert('Payment verification failed. Contact support.');
-              }
-            },
-            theme: { color: '#f97316' },
-          });
-          rzp.open();
+                                            // ✅ Open Razorpay checkout with new subscription
+                                            const Razorpay = (window as any).Razorpay;
+                                            const rzp = new Razorpay({
+                                                key: data.razorpayKeyId,
+                                                subscription_id: data.subscriptionId,
+                                                name: 'VidyaSangrah',
+                                                description: '₹200/month Teacher Subscription',
+                                                handler: async (response: any) => {
+                                                    // Verify payment
+                                                    const verifyRes = await fetch('/api/subscription/verify', {
+                                                        method: 'POST',
+                                                        headers: { 'Content-Type': 'application/json' },
+                                                        body: JSON.stringify({
+                                                            razorpay_subscription_id: response.razorpay_subscription_id,
+                                                            razorpay_payment_id: response.razorpay_payment_id,
+                                                            razorpay_signature: response.razorpay_signature,
+                                                        }),
+                                                    });
+                                                    if (verifyRes.ok) {
+                                                        setSubInfo(prev => ({ ...prev, status: 'active' }));
+                                                        alert('Subscription reactivated successfully! ✅');
+                                                    } else {
+                                                        alert('Payment verification failed. Contact support.');
+                                                    }
+                                                },
+                                                theme: { color: '#f97316' },
+                                            });
+                                            rzp.open();
 
-        } catch {
-          alert('Network error. Please try again.');
-        }
-      }}
-      className="w-full flex items-center justify-center gap-2 py-2 rounded-xl border-2 border-green-200 text-green-600 text-xs font-extrabold hover:bg-green-50 hover:border-green-300 transition-all"
-    >
-      <CheckCircle size={12} /> Renew Autopay
-    </button>
-    <p className="text-10px text-9CA3AF text-center mt-1.5">Resume your subscription</p>
-  </div>
-)}
+                                        } catch {
+                                            alert('Network error. Please try again.');
+                                        }
+                                    }}
+                                    className="w-full flex items-center justify-center gap-2 py-2 rounded-xl border-2 border-green-200 text-green-600 text-xs font-extrabold hover:bg-green-50 hover:border-green-300 transition-all"
+                                >
+                                    <CheckCircle size={12} /> Renew Autopay
+                                </button>
+                                <p className="text-10px text-9CA3AF text-center mt-1.5">Resume your subscription</p>
+                            </div>
+                        )}
                     </div>
                 </div>
                 <ReferralCard />  {/* ← ADD THIS LINE */}
@@ -3105,55 +3105,52 @@ export default function TeacherFeedClient({
                         {activeTab === 'feed' && (
                             <>
                                 {/* Welcome Banner + Composer */}
-                                <div className="relative bg-gradient-to-r from-[#1a1a2e] via-[#16213e] to-[#0f3460] rounded-2xl overflow-hidden">
-                                    <div className="absolute -right-8 -top-8 w-48 h-48 rounded-full bg-orange-500/10 pointer-events-none" />
-                                    <div className="absolute right-24 -bottom-8 w-32 h-32 rounded-full bg-amber-400/10 pointer-events-none" />
-                                    <div className="absolute left-1/2 -top-6 w-24 h-24 rounded-full bg-white/5 pointer-events-none" />
+                                <div className="relative bg-white rounded-2xl overflow-hidden shadow-lg border border-gray-100">
+                                    <div className="absolute -right-8 -top-8 w-48 h-48 rounded-full bg-gray-100 pointer-events-none" />
+                                    <div className="absolute right-24 -bottom-8 w-32 h-32 rounded-full bg-gray-50 pointer-events-none" />
+                                    <div className="absolute left-1/2 -top-6 w-24 h-24 rounded-full bg-gray-50/50 pointer-events-none" />
                                     <div className="relative px-6 pt-5 pb-4">
                                         <div className="flex flex-col items-center text-center mb-5">
-                                            <span className="bg-orange-500/20 text-orange-400 text-[10px] font-extrabold px-3 py-1 rounded-full border border-orange-500/20 uppercase tracking-wider mb-2">
+                                            <span className="bg-gray-100 text-gray-600 text-[10px] font-extrabold px-3 py-1 rounded-full border border-gray-200 uppercase tracking-wider mb-2">
                                                 ✦ Teacher Community
                                             </span>
-                                            <h2 className="text-white font-extrabold text-xl">
+                                            <h2 className="text-gray-800 font-extrabold text-xl">
                                                 Welcome back, {teacher.name.split(' ')[0]}! 👋
                                             </h2>
-                                            {/* <p className="text-white/40 text-xs mt-1">
-                                                Discover what fellow teachers are sharing across India
-                                            </p> */}
                                         </div>
-                                        <div className="bg-white/8 border border-white/15 rounded-2xl overflow-hidden backdrop-blur-sm">
+                                        <div className="bg-gray-50 border border-gray-200 rounded-2xl overflow-hidden">
                                             <div className="flex items-center gap-3 px-4 py-3">
                                                 {teacher.image
                                                     ? <img src={teacher.image} alt={teacher.name}
-                                                        className="w-9 h-9 rounded-full object-cover border-2 border-white/20 flex-shrink-0" />
-                                                    : <div className="w-9 h-9 rounded-full bg-gradient-to-br from-orange-400 to-amber-500 flex items-center justify-center text-white font-extrabold text-sm flex-shrink-0 shadow-md">
+                                                        className="w-9 h-9 rounded-full object-cover border-2 border-gray-300 flex-shrink-0" />
+                                                    : <div className="w-9 h-9 rounded-full bg-gradient-to-br from-gray-600 to-gray-700 flex items-center justify-center text-white font-extrabold text-sm flex-shrink-0 shadow-md">
                                                         {initials}
                                                     </div>}
                                                 <button onClick={() => setShowPosting(true)}
-                                                    className="flex-1 text-left px-5 py-2.5 rounded-full border border-white/20 text-white/40 text-sm font-medium hover:bg-white/10 hover:border-white/40 hover:text-white/70 transition-all">
+                                                    className="flex-1 text-left px-5 py-2.5 rounded-full border border-gray-300 text-gray-400 text-sm font-medium hover:bg-gray-100 hover:border-gray-400 hover:text-gray-600 transition-all">
                                                     Start a post...
                                                 </button>
                                             </div>
-                                            <div className="h-px bg-white/10" />
-                                            <div className="grid grid-cols-3 divide-x divide-white/10 px-2 py-1">
+                                            <div className="h-px bg-gray-200" />
+                                            <div className="grid grid-cols-3 divide-x divide-gray-200 px-2 py-1">
                                                 <button onClick={() => setShowUpload(true)}
-                                                    className="flex items-center justify-center gap-2.5 px-4 py-2.5 rounded-xl text-sm font-bold text-white/60 hover:text-white hover:bg-white/10 transition-all group">
-                                                    <div className="w-7 h-7 rounded-lg bg-green-500/20 group-hover:bg-green-500/30 flex items-center justify-center flex-shrink-0 transition-colors">
-                                                        <Play size={13} className="text-green-400" fill="#4ade80" />
+                                                    className="flex items-center justify-center gap-2.5 px-4 py-2.5 rounded-xl text-sm font-bold text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-all group">
+                                                    <div className="w-7 h-7 rounded-lg bg-green-100 group-hover:bg-green-200 flex items-center justify-center flex-shrink-0 transition-colors">
+                                                        <Play size={13} className="text-green-600" fill="#16a34a" />
                                                     </div>
                                                     <span>Video</span>
                                                 </button>
                                                 <button onClick={() => setShowPhoto(true)}
-                                                    className="flex items-center justify-center gap-2.5 px-4 py-2.5 rounded-xl text-sm font-bold text-white/60 hover:text-white hover:bg-white/10 transition-all group">
-                                                    <div className="w-7 h-7 rounded-lg bg-blue-500/20 group-hover:bg-blue-500/30 flex items-center justify-center flex-shrink-0 transition-colors">
-                                                        <ImageIcon size={13} className="text-blue-400" />
+                                                    className="flex items-center justify-center gap-2.5 px-4 py-2.5 rounded-xl text-sm font-bold text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-all group">
+                                                    <div className="w-7 h-7 rounded-lg bg-blue-100 group-hover:bg-blue-200 flex items-center justify-center flex-shrink-0 transition-colors">
+                                                        <ImageIcon size={13} className="text-blue-600" />
                                                     </div>
                                                     <span>Photo</span>
                                                 </button>
                                                 <button onClick={() => setShowArticle(true)}
-                                                    className="flex items-center justify-center gap-2.5 px-4 py-2.5 rounded-xl text-sm font-bold text-white/60 hover:text-white hover:bg-white/10 transition-all group">
-                                                    <div className="w-7 h-7 rounded-lg bg-orange-500/20 group-hover:bg-orange-500/30 flex items-center justify-center flex-shrink-0 transition-colors">
-                                                        <FileText size={13} className="text-orange-400" />
+                                                    className="flex items-center justify-center gap-2.5 px-4 py-2.5 rounded-xl text-sm font-bold text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-all group">
+                                                    <div className="w-7 h-7 rounded-lg bg-orange-100 group-hover:bg-orange-200 flex items-center justify-center flex-shrink-0 transition-colors">
+                                                        <FileText size={13} className="text-orange-600" />
                                                     </div>
                                                     <span>Write Article</span>
                                                 </button>
@@ -3161,7 +3158,7 @@ export default function TeacherFeedClient({
                                         </div>
                                         {myRank && (
                                             <div className="flex justify-end mt-2.5">
-                                                <span className="flex items-center gap-1 text-[10px] font-bold text-yellow-400/70">
+                                                <span className="flex items-center gap-1 text-[10px] font-bold text-amber-600">
                                                     <Trophy size={9} /><span>National Rank #{myRank}</span>
                                                 </span>
                                             </div>

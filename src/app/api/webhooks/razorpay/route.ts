@@ -70,11 +70,11 @@ import crypto from 'crypto';
 import connectDB from '@/lib/db';
 import Subscription from '@/models/Subscription';
 import Razorpay from 'razorpay';         // ✅ NEW
-import mongoose  from 'mongoose';         // ✅ NEW
+import mongoose from 'mongoose';         // ✅ NEW
 
 // ✅ NEW
 const razorpay = new Razorpay({
-  key_id:     process.env.RAZORPAY_KEY_ID!,
+  key_id: process.env.RAZORPAY_KEY_ID!,
   key_secret: process.env.RAZORPAY_KEY_SECRET!,
 });
 
@@ -84,12 +84,17 @@ const Teacher = mongoose.models.Teacher ??
 
 export async function POST(req: NextRequest) {
   try {
-    const body      = await req.text();
+    const body = await req.text();
     const signature = req.headers.get('x-razorpay-signature') ?? '';
 
     // ── Verify webhook signature ─────────────────────
+    // const expected = crypto
+    //   .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET!)
+    //   .update(body)
+    //   .digest('hex');
+    // ✅ Correct — use webhook secret
     const expected = crypto
-      .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET!)
+      .createHmac('sha256', process.env.RAZORPAY_WEBHOOK_SECRET!)
       .update(body)
       .digest('hex');
 
@@ -110,10 +115,10 @@ export async function POST(req: NextRequest) {
         await Subscription.findOneAndUpdate(
           { razorpaySubscriptionId: subId },
           {
-            status:             'active',
-            isActive:           true,
+            status: 'active',
+            isActive: true,
             currentPeriodStart: new Date(event.payload.subscription.entity.current_start * 1000),
-            currentPeriodEnd:   new Date(event.payload.subscription.entity.current_end   * 1000),
+            currentPeriodEnd: new Date(event.payload.subscription.entity.current_end * 1000),
           }
         );
         break;
@@ -123,16 +128,16 @@ export async function POST(req: NextRequest) {
         await Subscription.findOneAndUpdate(
           { razorpaySubscriptionId: subId },
           {
-            status:             'active',
-            isActive:           true,
+            status: 'active',
+            isActive: true,
             currentPeriodStart: new Date(event.payload.subscription.entity.current_start * 1000),
-            currentPeriodEnd:   new Date(event.payload.subscription.entity.current_end   * 1000),
+            currentPeriodEnd: new Date(event.payload.subscription.entity.current_end * 1000),
           }
         );
 
         // ✅ NEW — Auto-refund if teacher has pending free months
         const paymentId = event?.payload?.payment?.entity?.id;
-        const amount    = event?.payload?.payment?.entity?.amount; // paise
+        const amount = event?.payload?.payment?.entity?.amount; // paise
 
         if (paymentId && amount) {
           const sub = await Subscription.findOne({ razorpaySubscriptionId: subId });
