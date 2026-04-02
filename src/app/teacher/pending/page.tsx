@@ -8,6 +8,7 @@ import connectDB from '@/lib/db';
 import User from '@/models/User';
 import Subscription from '@/models/Subscription';
 import LanguageSelector from '@/components/FloatingLanguageSwitcher';
+import DashboardButton from '@/components/DashboardButton';
 
 
 export default async function TeacherPendingPage() {
@@ -24,12 +25,29 @@ export default async function TeacherPendingPage() {
 
   // Check subscription
   const sub = await Subscription.findOne({ teacherId: user?._id }).lean() as any;
-  const hasPaid = sub && sub.status === 'active';
+  // const hasPaid = sub && sub.status === 'active';
+  const hasPaid = sub && (sub.status === 'active' || sub.status === 'trial');
 
   // If approved but hasn't paid yet — go pay first
-  if (status === 'approved' && !hasPaid) {
-    redirect('/teacher/subscription');
-  }
+  // if (status === 'approved' && !hasPaid) {
+  //   redirect('/teacher/subscription');
+  // }
+  // If approved but no subscription yet — auto-create 3-month free trial
+if (status === 'approved' && !sub) {
+  const trialEnd = new Date();
+  trialEnd.setMonth(trialEnd.getMonth() + 3); // 3 months free
+  await Subscription.findOneAndUpdate(
+    { teacherId: user._id },
+    {
+      teacherId: user._id,
+      status: 'trial',
+      trialEndsAt: trialEnd,
+      currentPeriodEnd: trialEnd,
+    },
+    { upsert: true, new: true }
+  );
+  // fall through — hasPaid will now be true on next read
+}
 
   return (
     <div className="min-h-screen bg-[#F8F9FA]">
@@ -130,13 +148,16 @@ export default async function TeacherPendingPage() {
         <div className="space-y-3">
 
           {/* ── APPROVED: Go to Dashboard button ── */}
-          {status === 'approved' && hasPaid && (
+          {/* {status === 'approved' && hasPaid && (
             <Link
               href="/teacher/feed"
               className="w-full block py-4 bg-gradient-to-r from-[#f97316] to-[#ea580c] text-white font-extrabold text-base rounded-xl hover:opacity-90 transition-opacity text-center shadow-lg shadow-orange-200"
             >
               🚀 Go to Dashboard
             </Link>
+          )} */}
+          {status === 'approved' && hasPaid && (
+            <DashboardButton />
           )}
 
           {status === 'rejected' && (

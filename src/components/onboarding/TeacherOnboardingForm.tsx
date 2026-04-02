@@ -1,7 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import { ChevronLeft, Loader2, BookOpen, X, Plus } from 'lucide-react';
+import { useSession } from 'next-auth/react';
+import { ChevronLeft, Loader2, BookOpen, X, CreditCard, Shield } from 'lucide-react';
+import { initiateRazorpayCheckout } from '@/components/teacher/TeacherSubscriptionClient';
+import { toast } from 'sonner';
 
 const ALL_SUBJECTS = [
   'Mathematics','Physics','Chemistry','Biology','English',
@@ -112,6 +115,7 @@ function MultiSelect({
 
 export default function TeacherOnboardingForm({ email, defaultName, onBack, onSubmit }: Props) {
   const [loading, setLoading] = useState(false);
+  const { update } = useSession();
   const [form, setForm] = useState({
     name:               defaultName || '',
     bio:                '',
@@ -123,6 +127,7 @@ export default function TeacherOnboardingForm({ email, defaultName, onBack, onSu
     subjects:           [] as string[],
     classes:            [] as string[],
     boards:             [] as string[],
+    autopay:            true,
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -146,9 +151,96 @@ export default function TeacherOnboardingForm({ email, defaultName, onBack, onSu
     e.preventDefault();
     const errs = validate();
     if (Object.keys(errs).length) { setErrors(errs); return; }
+    
     setLoading(true);
-    await onSubmit(form);
-    setLoading(false);
+    try {
+      // 1. Submit onboarding profile first
+      await onSubmit(form);
+
+      // 2. If autopay, trigger Razorpay
+      if (form.autopay) {
+        const subRes = await fetch('/api/subscription/create', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ autopay: true }),
+        });
+        const subData = await subRes.json();
+
+        if (!subRes.ok) {
+          toast.error(subData.error ?? 'Failed to initiate subscription.');
+          setLoading(false);
+          return;
+        }
+
+        // Already subscribed — skip Razorpay and go straight to pending
+        if (subData.alreadyActive) {
+          toast.success('Subscription already active!');
+          window.location.href = '/teacher/pending';
+          return;
+        }
+
+        await initiateRazorpayCheckout({
+          subscriptionId: subData.subscriptionId,
+          keyId: subData.razorpayKeyId,
+          prefill: {
+            name: form.name,
+            email: email,
+          },
+          onSuccess: async (response) => {
+            try {
+              const verifyRes = await fetch('/api/subscription/verify', {
+                method:  'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  razorpay_subscription_id: response.razorpay_subscription_id,
+                  razorpay_payment_id:      response.razorpay_payment_id,
+                  razorpay_signature:       response.razorpay_signature,
+                }),
+              });
+
+              // if (verifyRes.ok) {
+              //   toast.success('🎉 Subscription activated! Welcome aboard.');
+              //   window.location.href = '/teacher/pending';
+              // } else {
+              //   toast.error('Payment verification failed.');
+              // }
+              if (verifyRes.ok) {
+  toast.success('🎉 Subscription activated! Welcome aboard.');
+  await update({
+    onboardingCompleted: true,
+    role: 'teacher',
+    teacherStatus: 'pending',
+  });
+  window.location.href = '/teacher/pending';
+} else {
+  toast.error('Payment verification failed.');
+}
+            } catch {
+              toast.error('Verification error.');
+            }
+          },
+          // onDismiss: () => {
+          //   toast.warning('Payment cancelled. You can complete it later.');
+          //   window.location.href = '/teacher/pending';
+          // }
+          onDismiss: async () => {
+  toast.warning('Payment cancelled. You can complete it later.');
+  await update({
+    onboardingCompleted: true,
+    role: 'teacher',
+    teacherStatus: 'pending',
+  });
+  window.location.href = '/teacher/pending';
+}
+        });
+      } else {
+        window.location.href = '/teacher/pending';
+      }
+    } catch (err: any) {
+      toast.error(err.message ?? 'Something went wrong.');
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -167,18 +259,10 @@ export default function TeacherOnboardingForm({ email, defaultName, onBack, onSu
           </div>
           <div>
             <h2 className="text-xl font-extrabold text-white">Teacher Application</h2>
-            {/* <p className="text-white/70 text-sm">Your profile will be reviewed by our admin team</p> */}
             <p className="text-white/70 text-sm">Set up your profile and start teaching for free</p>
           </div>
         </div>
       </div>
-
-      {/* Info banner */}
-      {/* <div className="mx-8 mt-6 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
-        <p className="text-sm text-amber-800 font-semibold">
-          📋 After submitting, your application will be reviewed within 24–48 hours. You'll be notified once approved.
-        </p>
-      </div> */}
 
       <form onSubmit={handleSubmit} className="px-8 py-6 space-y-6">
         {/* Full Name */}
@@ -197,7 +281,6 @@ export default function TeacherOnboardingForm({ email, defaultName, onBack, onSu
           {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name}</p>}
         </div>
 
-        {/* Subjects */}
         <MultiSelect
           label="Subjects You Teach"
           options={ALL_SUBJECTS}
@@ -206,7 +289,6 @@ export default function TeacherOnboardingForm({ email, defaultName, onBack, onSu
           error={errors.subjects}
         />
 
-        {/* Classes */}
         <MultiSelect
           label="Classes You Teach"
           options={ALL_CLASSES}
@@ -215,7 +297,6 @@ export default function TeacherOnboardingForm({ email, defaultName, onBack, onSu
           error={errors.classes}
         />
 
-        {/* Boards */}
         <MultiSelect
           label="Boards / Exams You Cover"
           options={ALL_BOARDS}
@@ -224,7 +305,6 @@ export default function TeacherOnboardingForm({ email, defaultName, onBack, onSu
           error={errors.boards}
         />
 
-        {/* Qualifications */}
         <div>
           <label className="block text-sm font-bold text-[#111827] mb-1.5">
             Qualifications <span className="text-red-500">*</span>
@@ -233,47 +313,25 @@ export default function TeacherOnboardingForm({ email, defaultName, onBack, onSu
             type="text"
             value={form.qualifications}
             onChange={(e) => set('qualifications', e.target.value)}
-            placeholder="e.g. B.Ed, M.Sc Mathematics, 8 years experience at DPS"
+            placeholder="e.g. B.Ed, M.Sc Mathematics"
             maxLength={200}
             className={`input-base ${errors.qualifications ? 'border-red-400' : ''}`}
           />
           {errors.qualifications && <p className="text-red-500 text-xs mt-1">{errors.qualifications}</p>}
         </div>
 
-        {/* Experience */}
-        <div>
-          <label className="block text-sm font-bold text-[#111827] mb-1.5">
-            Years of Teaching Experience
-          </label>
-          <input
-            type="number"
-            value={form.yearsOfExperience}
-            onChange={(e) => set('yearsOfExperience', e.target.value)}
-            placeholder="e.g. 5"
-            min={0} max={60}
-            className="input-base"
-          />
-        </div>
-
-        {/* Bio */}
-        <div>
-          <label className="block text-sm font-bold text-[#111827] mb-1.5">
-            Teaching Bio <span className="text-red-500">*</span>
-          </label>
-          <textarea
-            value={form.bio}
-            onChange={(e) => set('bio', e.target.value)}
-            placeholder="Describe your teaching style, achievements, and what students can expect from your videos..."
-            maxLength={500}
-            rows={4}
-            className={`input-base resize-none ${errors.bio ? 'border-red-400' : ''}`}
-          />
-          <p className="text-xs text-[#6B7280] mt-1 text-right">{form.bio.length}/500</p>
-          {errors.bio && <p className="text-red-500 text-xs mt-1">{errors.bio}</p>}
-        </div>
-
-        {/* Phone + City + State */}
-        <div className="grid sm:grid-cols-3 gap-4">
+        <div className="grid sm:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-bold text-[#111827] mb-1.5">Experience (Years)</label>
+            <input
+              type="number"
+              value={form.yearsOfExperience}
+              onChange={(e) => set('yearsOfExperience', e.target.value)}
+              placeholder="e.g. 5"
+              min={0} max={60}
+              className="input-base"
+            />
+          </div>
           <div>
             <label className="block text-sm font-bold text-[#111827] mb-1.5">Phone</label>
             <input
@@ -281,44 +339,62 @@ export default function TeacherOnboardingForm({ email, defaultName, onBack, onSu
               value={form.phone}
               onChange={(e) => set('phone', e.target.value)}
               placeholder="+91 XXXXX XXXXX"
-              maxLength={15}
               className="input-base"
             />
-          </div>
-          <div>
-            <label className="block text-sm font-bold text-[#111827] mb-1.5">City</label>
-            <input
-              type="text"
-              value={form.city}
-              onChange={(e) => set('city', e.target.value)}
-              placeholder="e.g. Pune"
-              maxLength={100}
-              className="input-base"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-bold text-[#111827] mb-1.5">State</label>
-            <select
-              value={form.state}
-              onChange={(e) => set('state', e.target.value)}
-              className="input-base"
-            >
-              <option value="">Select state</option>
-              {STATES.map((s) => <option key={s} value={s}>{s}</option>)}
-            </select>
           </div>
         </div>
 
-        {/* Submit */}
+        <div>
+          <label className="block text-sm font-bold text-[#111827] mb-1.5">Teaching Bio <span className="text-red-500">*</span></label>
+          <textarea
+            value={form.bio}
+            onChange={(e) => set('bio', e.target.value)}
+            placeholder="Describe your teaching style..."
+            maxLength={500}
+            rows={3}
+            className={`input-base resize-none ${errors.bio ? 'border-red-400' : ''}`}
+          />
+          {errors.bio && <p className="text-red-500 text-xs mt-1">{errors.bio}</p>}
+        </div>
+
+        {/* Autopay Checkbox - Glassmorphic Card */}
+        <div className="bg-gradient-to-br from-orange-50 to-white border border-orange-100 rounded-2xl p-5 shadow-sm hover:shadow-md transition-all duration-200">
+          <label className="flex items-start gap-4 cursor-pointer">
+            <div className="mt-1">
+              <input
+                type="checkbox"
+                checked={form.autopay}
+                onChange={(e) => set('autopay', e.target.checked)}
+                className="w-5 h-5 rounded border-orange-300 text-orange-500 focus:ring-orange-500 cursor-pointer"
+              />
+            </div>
+            <div className="flex-1">
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-sm font-bold text-[#111827]">Enable Autopay</span>
+                <span className="bg-green-100 text-green-700 text-[10px] font-extrabold px-2 py-0.5 rounded-full uppercase tracking-wider">
+                  🎉 1st Month Free
+                </span>
+              </div>
+              <p className="text-xs text-[#6B7280] leading-relaxed">
+                Enjoy your first month completely free! After that, you'll be charged <span className="font-bold text-[#111827]">₹200/month</span> automatically. Cancel anytime from your dashboard.
+              </p>
+              <div className="mt-3 flex items-center gap-3 text-[10px] font-semibold text-[#f97316]">
+                <div className="flex items-center gap-1"><CreditCard size={12}/> Secured Payment</div>
+                <div className="flex items-center gap-1"><Shield size={12}/> Trial Period Protection</div>
+              </div>
+            </div>
+          </label>
+        </div>
+
         <button
           type="submit"
           disabled={loading}
-          className="btn-primary w-full py-3.5 rounded-xl text-base flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed disabled:transform-none"
+          className="btn-primary w-full py-4 rounded-xl text-base font-extrabold flex items-center justify-center gap-2 shadow-lg shadow-orange-100"
         >
           {loading ? (
-            <><Loader2 size={18} className="animate-spin" /> Submitting application...</>
+            <><Loader2 size={18} className="animate-spin" /> Processing...</>
           ) : (
-            '🚀 Create My Teacher Account'
+            form.autopay ? '🚀 Start Free Trial & Join' : '🚀 Create Account'
           )}
         </button>
       </form>

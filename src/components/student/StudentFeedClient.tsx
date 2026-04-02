@@ -858,15 +858,12 @@ export default function StudentFeedClient({ student, videos: initialVideos, comm
 
           {/* ── Center badge ── */}
           {!isMobile && (
-            <div className="absolute left-1/2 -translate-x-1/2 flex flex-col items-center gap-0.5 pointer-events-none select-none">
-              <span className="text-[10px] font-extrabold text-[#9CA3AF] uppercase tracking-[0.2em]">
-                🇮🇳 
-              </span>
-              <span className="text-base font-black text-transparent bg-clip-text bg-gradient-to-r from-[#f97316] via-[#f59e0b] to-[#ea580c] whitespace-nowrap">
-                India's 1st EdTech Community
-              </span>
-            </div>
-          )}
+                        <div className="absolute left-138 -translate-x-1/2 flex flex-col items-center gap-0.5 pointer-events-none select-none">
+                            <span className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-[#f97316] via-[#f59e0b] to-[#ea580c] whitespace-nowrap tracking-tight">
+                                India's 1st EdTech Community
+                            </span>
+                        </div>
+                    )}
 
           <div className="ml-auto flex items-center gap-2.5">
             {student.points > 0 && (
@@ -1073,22 +1070,44 @@ export default function StudentFeedClient({ student, videos: initialVideos, comm
             {activePage === 'feed' && (
               <div className="space-y-4">
                 {/* Welcome banner */}
-                <div className="relative bg-gradient-to-r from-[#1a1a2e] via-[#16213e] to-[#0f3460] rounded-2xl p-5 overflow-hidden">
-                  <div className="absolute -right-8 -top-8 w-36 h-36 rounded-full bg-orange-500/10" />
-                  <div className="absolute right-16 -bottom-6 w-20 h-20 rounded-full bg-amber-400/10" />
-                  <div className="absolute right-6 top-6 w-10 h-10 rounded-full bg-white/5" />
-                  <div className="relative flex items-center justify-between gap-4">
-                    <div>
-                      <span className="bg-orange-500/20 text-orange-400 text-[10px] font-extrabold px-2.5 py-1 rounded-full border border-orange-500/20 uppercase tracking-wider inline-block mb-2">✦ Student Feed</span>
-                      <h2 className="text-white font-extrabold text-xl mb-1">Welcome back, {student.name.split(' ')[0]}! 👋</h2>
-                      <p className="text-white/50 text-sm">{student.studentClass} • {student.studentBoard}{student.points > 0 && ` • ${student.points.toLocaleString('en-IN')} pts`}</p>
-                    </div>
-                    <div className="hidden sm:flex flex-col items-center gap-1 flex-shrink-0">
-                      <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-orange-400 to-amber-500 flex items-center justify-center text-white font-extrabold text-xl shadow-lg shadow-orange-500/20">{initials}</div>
-                      {student.rank > 0 && <span className="text-[10px] font-bold text-yellow-400 flex items-center gap-0.5"><Trophy size={9} /><span>#{student.rank}</span></span>}
-                    </div>
-                  </div>
-                </div>
+                <div className="relative bg-gradient-to-r from-[#f8fafc] via-[#eef2f7] to-[#e2e8f0] rounded-2xl p-5 overflow-hidden border border-gray-200 shadow-sm">
+  
+  <div className="absolute -right-8 -top-8 w-36 h-36 rounded-full bg-orange-200/40" />
+  <div className="absolute right-16 -bottom-6 w-20 h-20 rounded-full bg-amber-200/40" />
+  <div className="absolute right-6 top-6 w-10 h-10 rounded-full bg-white/60" />
+
+  <div className="relative flex items-center justify-between gap-4">
+
+    <div>
+      <span className="bg-orange-100 text-orange-600 text-[10px] font-extrabold px-2.5 py-1 rounded-full border border-orange-200 uppercase tracking-wider inline-block mb-2">
+        ✦ Student Feed
+      </span>
+
+      <h2 className="text-gray-800 font-extrabold text-xl mb-1">
+        Welcome back, {student.name.split(' ')[0]}! 👋
+      </h2>
+
+      <p className="text-gray-500 text-sm">
+        {student.studentClass} • {student.studentBoard}
+        {student.points > 0 && ` • ${student.points.toLocaleString('en-IN')} pts`}
+      </p>
+    </div>
+
+    <div className="hidden sm:flex flex-col items-center gap-1 flex-shrink-0">
+      <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-orange-400 to-amber-500 flex items-center justify-center text-white font-extrabold text-xl shadow-md">
+        {initials}
+      </div>
+
+      {student.rank > 0 && (
+        <span className="text-[10px] font-bold text-yellow-600 flex items-center gap-0.5">
+          <Trophy size={9} />
+          <span>#{student.rank}</span>
+        </span>
+      )}
+    </div>
+
+  </div>
+</div>
 
                 {/* Feed type filter chips */}
                 <div className="flex items-center gap-2 flex-wrap">

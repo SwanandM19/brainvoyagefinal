@@ -28,12 +28,19 @@ export default function OnboardingPage() {
     }
   }, [status, session, router]);
 
+  
+
   async function handleSubmit(role: 'student' | 'teacher', data: Record<string, any>) {
     try {
       const res = await fetch('/api/onboarding', {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ role, ...data }),
+        // body:    JSON.stringify({ role, ...data }),
+        body: JSON.stringify({
+        role,
+        ...data,
+        usedReferralCode: sessionStorage.getItem('referralCode') ?? undefined,
+      }),
       });
 
       const json = await res.json();
@@ -44,23 +51,13 @@ export default function OnboardingPage() {
       }
 
       // Refresh JWT session with new role + onboarding status
-      await update({
-        onboardingCompleted: true,
-        role,
-        teacherStatus: json.teacherStatus ?? undefined,
-      });
-
-      toast.success(
-  role === 'student'
-    ? '🎉 Welcome to VidyaSangrah!'
-    : '🎉 Welcome to VidyaSangrah! Your teacher account is ready.'  // ✅ CHANGED
-);
-
-      if (role === 'teacher') {
-  router.replace('/teacher/feed');  // ✅ CHANGED from /teacher/subscription
-} else {
+      if (role === 'student') {
+  await update({ onboardingCompleted: true, role: 'student' });
+  toast.success('🎉 Welcome to VidyaSangrah!');
   router.replace('/student/feed');
 }
+// Teachers: TeacherOnboardingForm calls update() itself after Razorpay
+      // Note: for teachers, we stay on this page so the form can handle Razorpay
     } catch {
       toast.error('Network error. Please try again.');
     }

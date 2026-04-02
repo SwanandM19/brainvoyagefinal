@@ -4,11 +4,12 @@ export type SubStatus = 'trial' | 'active' | 'past_due' | 'cancelled' | 'pending
 
 export interface ISubscription extends Document {
   teacherId:              mongoose.Types.ObjectId;
-  razorpaySubscriptionId: string;
+  razorpaySubscriptionId?: string;
   razorpayCustomerId?:    string;
   planId:                 string;
   status:                 SubStatus;
-  trialEndsAt:            Date;
+  isActive:               boolean;
+  trialEndsAt?:           Date;
   currentPeriodStart?:    Date;
   currentPeriodEnd?:      Date;
   cancelledAt?:           Date;
@@ -19,11 +20,12 @@ export interface ISubscription extends Document {
 const SubscriptionSchema = new Schema<ISubscription>(
   {
     teacherId:              { type: Schema.Types.ObjectId, ref: 'User', required: true, unique: true },
-    razorpaySubscriptionId: { type: String, required: true },
+    razorpaySubscriptionId: { type: String, unique: true, sparse: true },
     razorpayCustomerId:     { type: String },
     planId:                 { type: String, required: true },
     status:                 { type: String, enum: ['trial','active','past_due','cancelled','pending'], default: 'pending' },
-    trialEndsAt:            { type: Date, required: true },
+    isActive:               { type: Boolean, default: false },
+    trialEndsAt:            { type: Date },
     currentPeriodStart:     { type: Date },
     currentPeriodEnd:       { type: Date },
     cancelledAt:            { type: Date },

@@ -5,6 +5,7 @@ import SessionProvider from '@/components/providers/SessionProvider';
 import { Toaster } from 'sonner';
 import './globals.css';
 import '@uploadthing/react/styles.css';
+import Script from 'next/script';
 
 
 export const metadata: Metadata = {
@@ -29,6 +30,7 @@ export default async function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body>
+        <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="beforeInteractive" />
         <SessionProvider session={session}>
           {children}
           <Toaster

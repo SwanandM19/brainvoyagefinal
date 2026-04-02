@@ -23,6 +23,58 @@ const FEATURES = [
   { icon: Shield, text: 'Analytics & performance stats' },
 ];
 
+export async function loadRazorpayScript(): Promise<void> {
+  return new Promise((resolve, reject) => {
+    if (typeof window === 'undefined') return;
+    if (window.Razorpay) { resolve(); return; }
+    const script   = document.createElement('script');
+    script.src     = 'https://checkout.razorpay.com/v1/checkout.js';
+    script.onload  = () => resolve();
+    script.onerror = () => reject(new Error('Failed to load Razorpay.'));
+    document.body.appendChild(script);
+  });
+}
+
+export interface CheckoutOptions {
+  subscriptionId?: string;
+  orderId?:        string;
+  keyId:           string;
+  amount?:         number;
+  currency?:       string;
+  name?:           string;
+  description?:    string;
+  prefill: {
+    name:  string;
+    email: string;
+  };
+  onSuccess: (response: any) => Promise<void> | void;
+  onDismiss?: () => void;
+}
+
+export async function initiateRazorpayCheckout(options: CheckoutOptions) {
+  await loadRazorpayScript();
+
+  const rzpOptions = {
+    key:         options.keyId,
+    subscription_id: options.subscriptionId,
+    order_id:    options.orderId,
+    amount:      options.amount,
+    currency:    options.currency || 'INR',
+    name:        options.name || 'VidyaSangrah',
+    description: options.description || 'Teacher Subscription',
+    image:       '/logo.png',
+    prefill:     options.prefill,
+    theme:       { color: '#f97316' },
+    handler:     options.onSuccess,
+    modal: {
+      ondismiss: options.onDismiss,
+    },
+  };
+
+  const rzp = new window.Razorpay(rzpOptions);
+  rzp.open();
+}
+
 export default function TeacherSubscriptionClient({ teacher }: Props) {
   const [loading, setLoading] = useState(false);
   const [error,   setError]   = useState('');
@@ -33,8 +85,11 @@ export default function TeacherSubscriptionClient({ teacher }: Props) {
     setError('');
 
     try {
-      // Step 1 — Create order
-      const res  = await fetch('/api/subscription/create', { method: 'POST' });
+      const res  = await fetch('/api/subscription/create', { 
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ autopay: true }), 
+      });
       const data = await res.json();
 
       if (!res.ok) {
@@ -44,38 +99,26 @@ export default function TeacherSubscriptionClient({ teacher }: Props) {
       }
 
       if (data.alreadyActive) {
-        window.location.href = '/teacher/pending'; // ← already paid, go to pending
+        window.location.href = '/teacher/pending';
         return;
       }
 
-      // Step 2 — Load Razorpay script
-      await loadRazorpayScript();
-
-      // Step 3 — Open Razorpay checkout
-      const options = {
-        key:         data.keyId,
-        order_id:    data.orderId,
-        amount:      data.amount,
-        currency:    data.currency,
-        name:        'VidyaSangrah',
-        description: 'Teacher Onboarding Fee — One Time',
-        image:       '/logo.png',
+      await initiateRazorpayCheckout({
+        subscriptionId: data.subscriptionId,
+        keyId:          data.razorpayKeyId,
         prefill: {
           name:  teacher.name,
           email: teacher.email,
         },
-        theme: { color: '#f97316' },
-
-        handler: async function (response: any) {
-          // Step 4 — Verify on server
+        onSuccess: async (response) => {
           try {
             const verifyRes = await fetch('/api/subscription/verify', {
               method:  'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
-                razorpay_order_id:   response.razorpay_order_id,
-                razorpay_payment_id: response.razorpay_payment_id,
-                razorpay_signature:  response.razorpay_signature,
+                razorpay_subscription_id: response.razorpay_subscription_id,
+                razorpay_payment_id:      response.razorpay_payment_id,
+                razorpay_signature:       response.razorpay_signature,
               }),
             });
 
@@ -84,7 +127,7 @@ export default function TeacherSubscriptionClient({ teacher }: Props) {
             if (verifyRes.ok && verifyData.success) {
               setSuccess(true);
               setTimeout(() => {
-                window.location.href = '/teacher/pending'; // ✅ CHANGED from /teacher/dashboard
+                window.location.href = '/teacher/pending';
               }, 2500);
             } else {
               setError('Payment verification failed. Please contact support.');
@@ -95,17 +138,11 @@ export default function TeacherSubscriptionClient({ teacher }: Props) {
             setLoading(false);
           }
         },
-
-        modal: {
-          ondismiss: () => {
-            setLoading(false);
-            setError('Payment cancelled. Complete the ₹200 payment to access your dashboard.');
-          },
-        },
-      };
-
-      const rzp = new window.Razorpay(options);
-      rzp.open();
+        onDismiss: () => {
+          setLoading(false);
+          setError('Payment cancelled. Complete the subscription to access your dashboard.');
+        }
+      });
 
     } catch (err: any) {
       setError(err.message ?? 'Something went wrong.');
@@ -113,18 +150,6 @@ export default function TeacherSubscriptionClient({ teacher }: Props) {
     }
   }
 
-  function loadRazorpayScript(): Promise<void> {
-    return new Promise((resolve, reject) => {
-      if (window.Razorpay) { resolve(); return; }
-      const script   = document.createElement('script');
-      script.src     = 'https://checkout.razorpay.com/v1/checkout.js';
-      script.onload  = () => resolve();
-      script.onerror = () => reject(new Error('Failed to load Razorpay.'));
-      document.body.appendChild(script);
-    });
-  }
-
-  // ── Success screen ───────────────────────────────────
   if (success) {
     return (
       <div className="min-h-screen bg-[#F8F9FA] flex items-center justify-center p-4">
@@ -132,10 +157,9 @@ export default function TeacherSubscriptionClient({ teacher }: Props) {
           <div className="w-20 h-20 bg-green-50 rounded-full flex items-center justify-center mx-auto mb-4">
             <CheckCircle size={40} className="text-green-500" />
           </div>
-          {/* ✅ CHANGED: updated success message */}
           <h2 className="text-2xl font-extrabold text-[#111827] mb-2">Payment Successful! 🎉</h2>
           <p className="text-[#6B7280] text-sm mb-2">
-            Your ₹200 payment is confirmed. Your application is now under admin review.
+            Your subscription is active. Your application is now under admin review.
           </p>
           <p className="text-[#6B7280] text-sm">Redirecting you to check your status...</p>
           <div className="mt-4 flex justify-center">
@@ -149,39 +173,32 @@ export default function TeacherSubscriptionClient({ teacher }: Props) {
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 to-white flex items-center justify-center p-4">
       <div className="w-full max-w-md">
-
-        {/* Logo */}
         <div className="flex justify-center mb-8">
           <Logo size="md" />
         </div>
 
         <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
-
-          {/* Header */}
           <div className="bg-gradient-to-r from-[#f97316] to-[#ea580c] px-8 py-8 text-white text-center">
             <p className="text-white/80 text-sm font-semibold uppercase tracking-widest mb-2">
               One Last Step
             </p>
             <h1 className="text-3xl font-extrabold mb-1">Activate Your Account</h1>
             <p className="text-white/80 text-sm">
-              One-time onboarding fee to unlock the full platform
+              Subscribe to unlock the full platform
             </p>
           </div>
 
           <div className="px-8 py-7 space-y-6">
-
-            {/* Pricing */}
             <div className="bg-orange-50 border border-orange-100 rounded-2xl p-5 text-center">
               <div className="flex items-end justify-center gap-1 mb-1">
                 <span className="text-4xl font-extrabold text-[#111827]">₹200</span>
-                <span className="text-[#6B7280] font-semibold mb-1">one time</span>
+                <span className="text-[#6B7280] font-semibold mb-1">/ month</span>
               </div>
               <p className="text-[#9CA3AF] text-xs mt-1">
-                Pay once · Full platform access · No recurring charges
+                First month FREE · Cancel anytime
               </p>
             </div>
 
-            {/* Features */}
             <div className="space-y-3">
               {FEATURES.map(({ icon: Icon, text }) => (
                 <div key={text} className="flex items-center gap-3">
@@ -193,7 +210,6 @@ export default function TeacherSubscriptionClient({ teacher }: Props) {
               ))}
             </div>
 
-            {/* Error */}
             {error && (
               <div className="flex items-start gap-2.5 bg-red-50 border border-red-200 rounded-xl px-4 py-3">
                 <AlertCircle size={16} className="text-red-500 flex-shrink-0 mt-0.5" />
@@ -201,7 +217,6 @@ export default function TeacherSubscriptionClient({ teacher }: Props) {
               </div>
             )}
 
-            {/* CTA */}
             <button
               onClick={handlePay}
               disabled={loading}
@@ -209,10 +224,9 @@ export default function TeacherSubscriptionClient({ teacher }: Props) {
             >
               {loading
                 ? <><Loader2 size={18} className="animate-spin" /> Processing...</>
-                : <><CreditCard size={18} /> Pay ₹200 &amp; Submit Application</>} {/* ✅ CHANGED button text */}
+                : <><CreditCard size={18} /> Start Free Trial & Submit</>}
             </button>
 
-            {/* Trust note */}
             <div className="flex items-center justify-center gap-2 text-[#9CA3AF] text-xs">
               <Shield size={12} />
               <span>Secured by Razorpay · 256-bit SSL encryption</span>
@@ -221,7 +235,7 @@ export default function TeacherSubscriptionClient({ teacher }: Props) {
         </div>
 
         <p className="text-center text-xs text-[#9CA3AF] mt-4">
-          One-time payment · Supports UPI, Cards, Net Banking &amp; Wallets
+          Recurring payment · Supports UPI, Cards, Net Banking & Wallets
         </p>
       </div>
     </div>
