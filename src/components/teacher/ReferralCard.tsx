@@ -11,9 +11,11 @@ interface ReferralStats {
   totalReferrals:   number;
 // referredCount:    number;
   pointsToNextFree: number;
+  pendingFreeMonths: number;
 }
 
-export default function ReferralCard() {
+// export default function ReferralCard({ onRedeemed }: { onRedeemed?: () => void }) {
+export default function ReferralCard({ onRedeemed, subStatus }: { onRedeemed?: () => void; subStatus: string }) {
   const [stats,     setStats]     = useState<ReferralStats | null>(null);
   const [copied,    setCopied]    = useState(false);
   const [redeeming, setRedeeming] = useState(false);
@@ -36,25 +38,64 @@ export default function ReferralCard() {
     setTimeout(() => setCopied(false), 2500);
   }
 
+  // async function redeemFreeMonth() {
+  //   if (!stats || stats.referralPoints < 100) return;
+  //   setRedeeming(true);
+  //   try {
+  //     const res  = await fetch('/api/referral/redeem', { method: 'POST' });
+  //     const data = await res.json();
+  //     if (res.ok) {
+  //       toast.success('🎉 Free month activated! Next billing skipped.');
+  //       const updated = await fetch('/api/referral/generate').then(r => r.json());
+  //       setStats(updated);
+  //     } else {
+  //       toast.error(data.error ?? 'Redemption failed.');
+  //     }
+  //   } catch {
+  //     toast.error('Something went wrong.');
+  //   } finally {
+  //     setRedeeming(false);
+  //   }
+  // }
   async function redeemFreeMonth() {
-    if (!stats || stats.referralPoints < 100) return;
-    setRedeeming(true);
-    try {
-      const res  = await fetch('/api/referral/redeem', { method: 'POST' });
-      const data = await res.json();
-      if (res.ok) {
-        toast.success('🎉 Free month activated! Next billing skipped.');
-        const updated = await fetch('/api/referral/generate').then(r => r.json());
-        setStats(updated);
-      } else {
-        toast.error(data.error ?? 'Redemption failed.');
-      }
-    } catch {
-      toast.error('Something went wrong.');
-    } finally {
-      setRedeeming(false);
+  if (!stats || stats.referralPoints < 100) return;
+  setRedeeming(true);
+  try {
+    const res  = await fetch('/api/referral/redeem', { method: 'POST' });
+    const data = await res.json();
+    if (res.ok) {
+      toast.success('🎉 Free month activated! Next billing skipped.');
+
+      // ✅ Optimistic update — UI reflects change instantly
+      setStats(prev =>
+        prev
+          ? {
+              ...prev,
+              referralPoints:   prev.referralPoints - 100,
+              freeMonthsEarned: prev.freeMonthsEarned + 1,
+              pointsToNextFree: 100 - ((prev.referralPoints - 100) % 100),
+            }
+          : prev
+      );
+
+      // ✅ Sync real DB values after short delay (ensures write is committed)
+      setTimeout(async () => {
+        try {
+          const updated = await fetch('/api/referral/generate').then(r => r.json());
+          setStats(updated);
+        } catch {
+          // Optimistic update stays if re-fetch fails — no harm done
+        }
+      }, 800);
+    } else {
+      toast.error(data.error ?? 'Redemption failed.');
     }
+  } catch {
+    toast.error('Something went wrong.');
+  } finally {
+    setRedeeming(false);
   }
+}
 
   if (loading) {
     return (
@@ -67,7 +108,9 @@ export default function ReferralCard() {
   if (!stats) return null;
 
   const progress  = Math.min(100, ((stats.referralPoints % 100) / 100) * 100);
-  const canRedeem = stats.referralPoints >= 100;
+  // const canRedeem = stats.referralPoints >= 100;
+  const isSubActive = subStatus === 'active' || subStatus === 'trial';
+const canRedeem   = stats.referralPoints >= 100 && isSubActive;
 
   return (
     <div className="bg-white rounded-2xl border border-[#E5E7EB] shadow-sm overflow-hidden">
@@ -98,7 +141,20 @@ export default function ReferralCard() {
             </div>
           ))}
         </div>
-
+{/* Free month pending banner */}
+{stats.pendingFreeMonths > 0 && (
+  <div className="flex items-start gap-2 bg-green-50 border border-green-200 rounded-xl px-3 py-2.5">
+    <span className="text-base leading-none mt-0.5">🎉</span>
+    <div>
+      <p className="text-xs font-extrabold text-green-700">
+        {stats.pendingFreeMonths} Free Month{stats.pendingFreeMonths > 1 ? 's' : ''} Pending!
+      </p>
+      <p className="text-[11px] text-green-600 mt-0.5">
+        Your next billing cycle will be skipped automatically.
+      </p>
+    </div>
+  </div>
+)}
         {/* Progress bar */}
         <div>
           <div className="flex justify-between items-center mb-1.5">
@@ -133,7 +189,11 @@ export default function ReferralCard() {
             </button>
           </div>
         </div>
-
+{stats.referralPoints >= 100 && !isSubActive && (
+  <p className="text-[11px] text-amber-500 font-semibold text-center bg-amber-50 border border-amber-200 rounded-xl py-2">
+    ⚠️ Reactivate your subscription to redeem points.
+  </p>
+)}
         {/* Redeem button — only shown when eligible */}
         {canRedeem && (
           <button

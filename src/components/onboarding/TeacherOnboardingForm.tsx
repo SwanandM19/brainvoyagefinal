@@ -7,41 +7,41 @@ import { initiateRazorpayCheckout } from '@/components/teacher/TeacherSubscripti
 import { toast } from 'sonner';
 
 const ALL_SUBJECTS = [
-  'Mathematics','Physics','Chemistry','Biology','English',
-  'Hindi','History','Geography','Political Science','Economics',
-  'Computer Science','Accountancy','Business Studies',
-  'Environmental Science','Physical Education','Art','Music',
-  'Sanskrit','Urdu','Social Science',
+  'Mathematics', 'Physics', 'Chemistry', 'Biology', 'English',
+  'Hindi', 'History', 'Geography', 'Political Science', 'Economics',
+  'Computer Science', 'Accountancy', 'Business Studies',
+  'Environmental Science', 'Physical Education', 'Art', 'Music',
+  'Sanskrit', 'Urdu', 'Social Science',
 ];
 
 const ALL_CLASSES = [
-  'Class 1','Class 2','Class 3','Class 4','Class 5',
-  'Class 6','Class 7','Class 8','Class 9','Class 10',
-  'Class 11','Class 12',
+  'Class 1', 'Class 2', 'Class 3', 'Class 4', 'Class 5',
+  'Class 6', 'Class 7', 'Class 8', 'Class 9', 'Class 10',
+  'Class 11', 'Class 12',
 ];
 
 const ALL_BOARDS = [
-  'CBSE','ICSE','IGCSE',
-  'Maharashtra SSC','UP Board','Rajasthan Board',
-  'Karnataka Board','Tamil Nadu Board','AP Board',
-  'Telangana Board','Gujarat Board','Other State Board',
-  'JEE','NEET','UPSC',
+  'CBSE', 'ICSE', 'IGCSE',
+  'Maharashtra SSC', 'UP Board', 'Rajasthan Board',
+  'Karnataka Board', 'Tamil Nadu Board', 'AP Board',
+  'Telangana Board', 'Gujarat Board', 'Other State Board',
+  'JEE', 'NEET', 'UPSC',
 ];
 
 const STATES = [
-  'Andhra Pradesh','Arunachal Pradesh','Assam','Bihar','Chhattisgarh',
-  'Goa','Gujarat','Haryana','Himachal Pradesh','Jharkhand','Karnataka',
-  'Kerala','Madhya Pradesh','Maharashtra','Manipur','Meghalaya','Mizoram',
-  'Nagaland','Odisha','Punjab','Rajasthan','Sikkim','Tamil Nadu',
-  'Telangana','Tripura','Uttar Pradesh','Uttarakhand','West Bengal',
-  'Delhi','Jammu & Kashmir','Ladakh',
+  'Andhra Pradesh', 'Arunachal Pradesh', 'Assam', 'Bihar', 'Chhattisgarh',
+  'Goa', 'Gujarat', 'Haryana', 'Himachal Pradesh', 'Jharkhand', 'Karnataka',
+  'Kerala', 'Madhya Pradesh', 'Maharashtra', 'Manipur', 'Meghalaya', 'Mizoram',
+  'Nagaland', 'Odisha', 'Punjab', 'Rajasthan', 'Sikkim', 'Tamil Nadu',
+  'Telangana', 'Tripura', 'Uttar Pradesh', 'Uttarakhand', 'West Bengal',
+  'Delhi', 'Jammu & Kashmir', 'Ladakh',
 ];
 
 interface Props {
-  email:       string;
+  email: string;
   defaultName: string;
-  onBack:      () => void;
-  onSubmit:    (data: Record<string, any>) => Promise<void>;
+  onBack: () => void;
+  onSubmit: (data: Record<string, any>) => Promise<void>;
 }
 
 function MultiSelect({
@@ -97,11 +97,10 @@ function MultiSelect({
               key={item}
               type="button"
               onClick={() => toggle(item)}
-              className={`text-xs font-semibold px-3 py-1.5 rounded-full border transition-all duration-150 ${
-                isSelected
+              className={`text-xs font-semibold px-3 py-1.5 rounded-full border transition-all duration-150 ${isSelected
                   ? 'bg-[#f97316] border-[#f97316] text-white'
                   : 'bg-white border-[#E5E7EB] text-[#6B7280] hover:border-[#f97316] hover:text-[#f97316]'
-              }`}
+                }`}
             >
               {isSelected ? <span className="flex items-center gap-1"><span>✓</span>{item}</span> : item}
             </button>
@@ -117,17 +116,17 @@ export default function TeacherOnboardingForm({ email, defaultName, onBack, onSu
   const [loading, setLoading] = useState(false);
   const { update } = useSession();
   const [form, setForm] = useState({
-    name:               defaultName || '',
-    bio:                '',
-    phone:              '',
-    city:               '',
-    state:              '',
-    qualifications:     '',
-    yearsOfExperience:  '',
-    subjects:           [] as string[],
-    classes:            [] as string[],
-    boards:             [] as string[],
-    autopay:            true,
+    name: defaultName || '',
+    bio: '',
+    phone: '',
+    city: '',
+    state: '',
+    qualifications: '',
+    yearsOfExperience: '',
+    subjects: [] as string[],
+    classes: [] as string[],
+    boards: [] as string[],
+    autopay: true,
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -138,11 +137,11 @@ export default function TeacherOnboardingForm({ email, defaultName, onBack, onSu
 
   function validate() {
     const e: Record<string, string> = {};
-    if (!form.name.trim())         e.name     = 'Full name is required.';
-    if (!form.subjects.length)     e.subjects = 'Select at least one subject.';
-    if (!form.classes.length)      e.classes  = 'Select at least one class.';
-    if (!form.boards.length)       e.boards   = 'Select at least one board.';
-    if (!form.bio.trim())          e.bio      = 'A short bio is required for verification.';
+    if (!form.name.trim()) e.name = 'Full name is required.';
+    if (!form.subjects.length) e.subjects = 'Select at least one subject.';
+    if (!form.classes.length) e.classes = 'Select at least one class.';
+    if (!form.boards.length) e.boards = 'Select at least one board.';
+    if (!form.bio.trim()) e.bio = 'A short bio is required for verification.';
     if (!form.qualifications.trim()) e.qualifications = 'Qualifications are required for verification.';
     return e;
   }
@@ -151,14 +150,12 @@ export default function TeacherOnboardingForm({ email, defaultName, onBack, onSu
     e.preventDefault();
     const errs = validate();
     if (Object.keys(errs).length) { setErrors(errs); return; }
-    
-    setLoading(true);
-    try {
-      // 1. Submit onboarding profile first
-      await onSubmit(form);
 
-      // 2. If autopay, trigger Razorpay
+    setLoading(true);
+
+    try {
       if (form.autopay) {
+        // STEP 1: Create Razorpay subscription only (profile NOT saved yet)
         const subRes = await fetch('/api/subscription/create', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -172,13 +169,16 @@ export default function TeacherOnboardingForm({ email, defaultName, onBack, onSu
           return;
         }
 
-        // Already subscribed — skip Razorpay and go straight to pending
+        // Edge case: already has active subscription → save profile and proceed
         if (subData.alreadyActive) {
+          await onSubmit(form);
           toast.success('Subscription already active!');
+          await update({ onboardingCompleted: true, role: 'teacher', teacherStatus: 'pending' });
           window.location.href = '/teacher/pending';
           return;
         }
 
+        // STEP 2: Open Razorpay checkout
         await initiateRazorpayCheckout({
           subscriptionId: subData.subscriptionId,
           keyId: subData.razorpayKeyId,
@@ -186,59 +186,51 @@ export default function TeacherOnboardingForm({ email, defaultName, onBack, onSu
             name: form.name,
             email: email,
           },
+
+          // ✅ Only on verified success → save profile → notify admin
           onSuccess: async (response) => {
             try {
               const verifyRes = await fetch('/api/subscription/verify', {
-                method:  'POST',
+                method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                   razorpay_subscription_id: response.razorpay_subscription_id,
-                  razorpay_payment_id:      response.razorpay_payment_id,
-                  razorpay_signature:       response.razorpay_signature,
+                  razorpay_payment_id: response.razorpay_payment_id,
+                  razorpay_signature: response.razorpay_signature,
                 }),
               });
 
-              // if (verifyRes.ok) {
-              //   toast.success('🎉 Subscription activated! Welcome aboard.');
-              //   window.location.href = '/teacher/pending';
-              // } else {
-              //   toast.error('Payment verification failed.');
-              // }
               if (verifyRes.ok) {
-  toast.success('🎉 Subscription activated! Welcome aboard.');
-  await update({
-    onboardingCompleted: true,
-    role: 'teacher',
-    teacherStatus: 'pending',
-  });
-  window.location.href = '/teacher/pending';
-} else {
-  toast.error('Payment verification failed.');
-}
+                await onSubmit(form); // ← profile saved ONLY here
+                toast.success('🎉 Subscription activated! Welcome aboard.');
+                await update({ onboardingCompleted: true, role: 'teacher', teacherStatus: 'pending' });
+                window.location.href = '/teacher/pending';
+              } else {
+                toast.error('Payment verification failed. Please try again.');
+                setLoading(false);
+              }
             } catch {
-              toast.error('Verification error.');
+              toast.error('Verification error. Please try again.');
+              setLoading(false);
             }
           },
-          // onDismiss: () => {
-          //   toast.warning('Payment cancelled. You can complete it later.');
-          //   window.location.href = '/teacher/pending';
-          // }
-          onDismiss: async () => {
-  toast.warning('Payment cancelled. You can complete it later.');
-  await update({
-    onboardingCompleted: true,
-    role: 'teacher',
-    teacherStatus: 'pending',
-  });
-  window.location.href = '/teacher/pending';
-}
+
+          // ✅ Cancel/close → stay on form, nothing saved, admin NOT notified
+          onDismiss: () => {
+            toast.warning('Payment cancelled. Please complete payment to join.');
+            setLoading(false);
+          },
         });
+
       } else {
+        // No autopay → save profile directly
+        await onSubmit(form);
+        await update({ onboardingCompleted: true, role: 'teacher', teacherStatus: 'pending' });
         window.location.href = '/teacher/pending';
       }
+
     } catch (err: any) {
       toast.error(err.message ?? 'Something went wrong.');
-    } finally {
       setLoading(false);
     }
   }
@@ -379,8 +371,8 @@ export default function TeacherOnboardingForm({ email, defaultName, onBack, onSu
                 Enjoy your first month completely free! After that, you'll be charged <span className="font-bold text-[#111827]">₹200/month</span> automatically. Cancel anytime from your dashboard.
               </p>
               <div className="mt-3 flex items-center gap-3 text-[10px] font-semibold text-[#f97316]">
-                <div className="flex items-center gap-1"><CreditCard size={12}/> Secured Payment</div>
-                <div className="flex items-center gap-1"><Shield size={12}/> Trial Period Protection</div>
+                <div className="flex items-center gap-1"><CreditCard size={12} /> Secured Payment</div>
+                <div className="flex items-center gap-1"><Shield size={12} /> Trial Period Protection</div>
               </div>
             </div>
           </label>

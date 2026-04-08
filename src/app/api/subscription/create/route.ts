@@ -324,12 +324,98 @@
 //   }
 // }
 
+// import { NextResponse }     from 'next/server';
+// import { getServerSession } from 'next-auth';
+// import { authOptions }      from '@/lib/auth.config';
+// import Razorpay             from 'razorpay';
+// import Subscription         from '@/models/Subscription';
+// import connectDB            from '@/lib/db'; // ← your actual db file
+
+// const razorpay = new Razorpay({
+//   key_id:     process.env.RAZORPAY_KEY_ID!,
+//   key_secret: process.env.RAZORPAY_KEY_SECRET!,
+// });
+
+// export async function POST() {
+//   try {
+//     const session = await getServerSession(authOptions);
+//     if (!session?.user?.id) {
+//       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+//     }
+
+//     await connectDB();
+
+//     // ── Already has a subscription → return it ───────────────
+//     const existing = await Subscription.findOne({ teacherId: session.user.id });
+
+//     if (existing?.razorpaySubscriptionId) {
+//       // If already active/trial, skip checkout entirely
+//       if (existing.status === 'active' || existing.status === 'trial') {
+//         return NextResponse.json({ alreadyActive: true });
+//       }
+//       // Pending subscription exists — return it to reopen checkout
+//       return NextResponse.json({
+//         subscriptionId: existing.razorpaySubscriptionId,
+//         razorpayKeyId:  process.env.RAZORPAY_KEY_ID,
+//       });
+//     }
+
+//     // ── Calculate trial end = exactly 30 days from now ───────
+//     const trialEndsAt = new Date();
+//     trialEndsAt.setDate(trialEndsAt.getDate() + 30);
+
+//     // CRITICAL: start_at must be a Unix timestamp in SECONDS
+//     // This tells Razorpay: "do NOT charge until this date"
+//     // Today = ₹0 charged. After 30 days = ₹200 auto-charged.
+//     const startAt = Math.floor(trialEndsAt.getTime() / 1000);
+
+//     // ── Create subscription on Razorpay ───────────────────────
+//     const rzpSub = await razorpay.subscriptions.create({
+//       plan_id:         process.env.RAZORPAY_PLAN_ID!,
+//       total_count:     12,      // 12 monthly cycles after trial
+//       quantity:        1,
+//       start_at:        startAt, // ← FREE TRIAL: first charge 30 days later
+//       customer_notify: 1,       // Razorpay sends reminder emails
+//       notes: {
+//         teacherId: session.user.id,
+//         email:     session.user.email ?? '',
+//       },
+//     });
+
+//     // ── Save to DB ────────────────────────────────────────────
+//     await Subscription.findOneAndUpdate(
+//       { teacherId: session.user.id },
+//       {
+//         teacherId:              session.user.id,
+//         razorpaySubscriptionId: rzpSub.id,
+//         planId:                 process.env.RAZORPAY_PLAN_ID!,
+//         status:                 'trial',
+//         isActive:               true,
+//         trialEndsAt,
+//       },
+//       { upsert: true, returnDocument: 'after' }
+//     );
+
+//     return NextResponse.json({
+//       subscriptionId: rzpSub.id,
+//       razorpayKeyId:  process.env.RAZORPAY_KEY_ID,
+//     });
+
+//   } catch (err: any) {
+//     console.error('[subscription/create ERROR]', JSON.stringify(err, null, 2));
+//     return NextResponse.json(
+//       { error: err?.error?.description ?? err?.message ?? 'Failed to create subscription' },
+//       { status: 500 }
+//     );
+//   }
+// }
+
 import { NextResponse }     from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions }      from '@/lib/auth.config';
 import Razorpay             from 'razorpay';
 import Subscription         from '@/models/Subscription';
-import connectDB            from '@/lib/db'; // ← your actual db file
+import connectDB            from '@/lib/db';
 
 const razorpay = new Razorpay({
   key_id:     process.env.RAZORPAY_KEY_ID!,
@@ -349,15 +435,18 @@ export async function POST() {
     const existing = await Subscription.findOne({ teacherId: session.user.id });
 
     if (existing?.razorpaySubscriptionId) {
-      // If already active/trial, skip checkout entirely
+      // Already verified and active — skip checkout entirely
       if (existing.status === 'active' || existing.status === 'trial') {
         return NextResponse.json({ alreadyActive: true });
       }
-      // Pending subscription exists — return it to reopen checkout
-      return NextResponse.json({
-        subscriptionId: existing.razorpaySubscriptionId,
-        razorpayKeyId:  process.env.RAZORPAY_KEY_ID,
-      });
+      // 'created' status = Razorpay sub exists but teacher cancelled/never completed
+      // Reopen the same checkout so a new subscription isn't created on Razorpay
+      if (existing.status === 'created') {
+        return NextResponse.json({
+          subscriptionId: existing.razorpaySubscriptionId,
+          razorpayKeyId:  process.env.RAZORPAY_KEY_ID,
+        });
+      }
     }
 
     // ── Calculate trial end = exactly 30 days from now ───────
@@ -382,15 +471,17 @@ export async function POST() {
       },
     });
 
-    // ── Save to DB ────────────────────────────────────────────
+    // ── Save to DB with status 'created' (NOT active yet) ────
+    // Status will be updated to 'trial' + isActive: true only
+    // after Razorpay signature is verified in /api/subscription/verify
     await Subscription.findOneAndUpdate(
       { teacherId: session.user.id },
       {
         teacherId:              session.user.id,
         razorpaySubscriptionId: rzpSub.id,
         planId:                 process.env.RAZORPAY_PLAN_ID!,
-        status:                 'trial',
-        isActive:               true,
+        status:                 'created',  // ✅ not active until verify
+        isActive:               false,      // ✅ not active until verify
         trialEndsAt,
       },
       { upsert: true, returnDocument: 'after' }

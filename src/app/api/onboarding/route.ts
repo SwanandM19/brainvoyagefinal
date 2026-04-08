@@ -1,12 +1,12 @@
+
 // import { NextRequest, NextResponse } from 'next/server';
 // import { getToken } from 'next-auth/jwt';
 // import connectDB from '@/lib/db';
 // import User from '@/models/User';
-// import Teacher from '@/models/Teacher';  
+// import Teacher from '@/models/Teacher';
 
 // export async function POST(req: NextRequest) {
 //   try {
-//     // Use getToken instead of getServerSession — works reliably with JWT
 //     const token = await getToken({
 //       req,
 //       secret: process.env.NEXTAUTH_SECRET!,
@@ -79,6 +79,10 @@
 //         );
 //       }
 
+//       // ✅ Read referral code from body first, fallback to cookie
+//       const refCode = body.usedReferralCode?.trim() || req.cookies.get('referral_code')?.value || null;
+//       console.log('[ONBOARDING] refCode from body:', body.usedReferralCode, '| final refCode:', refCode);
+
 //       await User.updateOne(
 //         { _id: user._id },
 //         {
@@ -88,8 +92,8 @@
 //             teacherStatus:       'pending',
 //             bio:                 bio?.trim()            ?? '',
 //             phone:               phone?.trim()          ?? '',
-//             city:                city?.trim()           ?? '',
-//             state:               state?.trim()          ?? '',
+//             city:                city?.trim()            ?? '',
+//             state:               state?.trim()           ?? '',
 //             subjects,
 //             classes,
 //             boards,
@@ -100,14 +104,12 @@
 //         }
 //       );
 
-//       // ── ADD THIS BLOCK right after User.updateOne ──
 //       await Teacher.findOneAndUpdate(
 //         { userId: String(user._id) },
 //         {
 //           $setOnInsert: {
-//             userId:          String(user._id),
-//             email:           user.email,
-//             usedReferralCode: body.usedReferralCode ?? null,
+//             userId: String(user._id),
+//             email:  user.email,
 //           },
 //           $set: {
 //             name:              name.trim(),
@@ -119,6 +121,8 @@
 //             boards,
 //             yearsOfExperience: Number(yearsOfExperience) || 0,
 //             teacherStatus:     'pending',
+//             // ✅ Always update usedReferralCode — not just on insert
+//             ...(refCode ? { usedReferralCode: refCode } : {}),
 //           },
 //         },
 //         { upsert: true, new: true }
@@ -135,11 +139,14 @@
 //   }
 // }
 
+
+
 import { NextRequest, NextResponse } from 'next/server';
 import { getToken } from 'next-auth/jwt';
 import connectDB from '@/lib/db';
 import User from '@/models/User';
 import Teacher from '@/models/Teacher';
+import Referral from '@/models/Referral';
 
 export async function POST(req: NextRequest) {
   try {
@@ -215,8 +222,9 @@ export async function POST(req: NextRequest) {
         );
       }
 
-      // ✅ Read referral code from cookie
-      const refCode = req.cookies.get('referral_code')?.value ?? null;
+      // ✅ Read referral code from body first, fallback to cookie
+      const refCode = body.usedReferralCode?.trim() || req.cookies.get('referral_code')?.value || null;
+      console.log('[ONBOARDING] refCode from body:', body.usedReferralCode, '| final refCode:', refCode);
 
       await User.updateOne(
         { _id: user._id },
@@ -243,9 +251,8 @@ export async function POST(req: NextRequest) {
         { userId: String(user._id) },
         {
           $setOnInsert: {
-            userId:           String(user._id),
-            email:            user.email,
-            usedReferralCode: refCode,  // ✅ from cookie, not body
+            userId: String(user._id),
+            email:  user.email,
           },
           $set: {
             name:              name.trim(),
@@ -257,10 +264,46 @@ export async function POST(req: NextRequest) {
             boards,
             yearsOfExperience: Number(yearsOfExperience) || 0,
             teacherStatus:     'pending',
+            // ✅ Always update usedReferralCode — not just on insert
+            ...(refCode ? { usedReferralCode: refCode } : {}),
           },
         },
-        { upsert: true, new: true }
+        { upsert: true, returnDocument: 'after' }
       );
+
+      // ── Award referral points immediately on registration ──
+      if (refCode) {
+        try {
+          const alreadyCredited = await Referral.findOne({
+            referredUserId: String(user._id),
+            status:         'credited',
+          });
+
+          if (!alreadyCredited) {
+            const referrer = await Teacher.findOne({ referralCode: refCode });
+
+            if (referrer) {
+              referrer.referralPoints = (referrer.referralPoints ?? 0) + 50;
+              await referrer.save();
+
+              await Referral.create({
+                referrerId:     referrer.userId,
+                referredUserId: String(user._id),
+                code:           refCode,
+                status:         'credited',
+                pointsAwarded:  50,
+              });
+
+              console.log(`[ONBOARDING] ✅ Referral credited: 50pts to ${referrer.userId}`);
+            } else {
+              console.log(`[ONBOARDING] ⚠️ No teacher found with referralCode: ${refCode}`);
+            }
+          }
+        } catch (refErr) {
+          console.error('[ONBOARDING] Referral credit failed:', refErr);
+          // Don't block onboarding if referral fails
+        }
+      }
 
       return NextResponse.json({ success: true, role: 'teacher', teacherStatus: 'pending' });
     }

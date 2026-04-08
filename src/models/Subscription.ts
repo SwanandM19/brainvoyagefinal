@@ -1,6 +1,6 @@
 import mongoose, { Schema, Document, Model } from 'mongoose';
 
-export type SubStatus = 'trial' | 'active' | 'past_due' | 'cancelled' | 'pending';
+export type SubStatus = 'created' | 'trial' | 'active' | 'past_due' | 'cancelled' | 'pending';
 
 export interface ISubscription extends Document {
   teacherId:              mongoose.Types.ObjectId;
@@ -23,7 +23,7 @@ const SubscriptionSchema = new Schema<ISubscription>(
     razorpaySubscriptionId: { type: String, unique: true, sparse: true },
     razorpayCustomerId:     { type: String },
     planId:                 { type: String, required: true },
-    status:                 { type: String, enum: ['trial','active','past_due','cancelled','pending'], default: 'pending' },
+    status:                 { type: String, enum: ['created','trial','active','past_due','cancelled','pending'], default: 'pending' },
     isActive:               { type: Boolean, default: false },
     trialEndsAt:            { type: Date },
     currentPeriodStart:     { type: Date },

@@ -4,7 +4,7 @@ import { redirect } from 'next/navigation';
 import connectDB from '@/lib/db';
 import User from '@/models/User';
 import Video from '@/models/Video';
-import Post from '@/models/Post';           // ← ADD THIS IMPORT
+import Post from '@/models/Post';
 import Subscription from '@/models/Subscription';
 import TeacherFeedClient from '@/components/teacher/TeacherFeedClient';
 
@@ -20,27 +20,8 @@ export default async function TeacherFeedPage() {
   const teacher = await User.findOne({ email: session.user.email }).lean() as any;
   if (!teacher) redirect('/auth/login');
 
-  // ── Auto-activate subscription ────────────────────────────
-  const sub = await Subscription.findOneAndUpdate(
-    { teacherId: teacher._id },
-    {
-      $setOnInsert: {
-        teacherId: teacher._id,
-        planId: 'free',
-        status: 'active',
-        currentPeriodEnd: new Date('2099-12-31'),
-        trialEndsAt: null,
-      },
-    },
-    { upsert: true, returnDocument: 'after' }
-  ).lean() as any;
-
-  if (sub.status !== 'active') {
-    await Subscription.findOneAndUpdate(
-      { teacherId: teacher._id },
-      { status: 'active', planId: 'free', currentPeriodEnd: new Date('2099-12-31'), trialEndsAt: null }
-    );
-  }
+  // ── Read real subscription from DB (no auto-overwriting) ──
+  const sub = await Subscription.findOne({ teacherId: teacher._id }).lean() as any;
 
   // ── Own videos ────────────────────────────────────────────
   const ownVideosDocs = await Video.find({ teacherId: teacher._id })
@@ -104,7 +85,7 @@ export default async function TeacherFeedPage() {
     },
   }));
 
-  // ── Community posts (photos + articles) ──────────────────  ← NEW BLOCK
+  // ── Community posts (photos + articles) ──────────────────
   const communityPostDocs = await Post.find({ status: 'active' })
     .sort({ createdAt: -1 })
     .limit(80)
@@ -122,7 +103,7 @@ export default async function TeacherFeedPage() {
     classes: p.classes ?? [],
     boards: p.boards ?? [],
     createdAt: p.createdAt.toISOString(),
-    likesCount: p.likes?.length ?? 0,   // ← ADD THIS
+    likesCount: p.likes?.length ?? 0,
     teacher: {
       id: p.teacherId?._id?.toString() ?? '',
       name: p.teacherId?.name ?? 'Unknown',
@@ -131,11 +112,12 @@ export default async function TeacherFeedPage() {
     },
   }));
 
-
+  // ── Real subscription info from DB ────────────────────────
   const subInfo = {
-    status: 'active',
-    trialEndsAt: null,
-    currentPeriodEnd: '2099-12-31T00:00:00.000Z',
+    status:           sub?.status           ?? 'trial',
+    trialEndsAt:      sub?.trialEndsAt      ? new Date(sub.trialEndsAt).toISOString()      : null,
+    currentPeriodStart: sub?.currentPeriodStart ? new Date(sub.currentPeriodStart).toISOString() : null,
+    currentPeriodEnd: sub?.currentPeriodEnd ? new Date(sub.currentPeriodEnd).toISOString() : null,
   };
 
   return (
@@ -152,12 +134,14 @@ export default async function TeacherFeedPage() {
         city: teacher.city ?? '',
         state: teacher.state ?? '',
         yearsOfExperience: teacher.yearsOfExperience ?? 0,
+        freeMonthsEarned: teacher.freeMonthsEarned ?? 0,
+        pendingFreeMonths: teacher.pendingFreeMonths ?? 0,
       }}
       stats={stats}
       ownVideos={serializedOwnVideos}
       subscription={subInfo}
       communityVideos={serializedCommunity}
-      communityPosts={serializedCommunityPosts}   // ← ADD THIS PROP
+      communityPosts={serializedCommunityPosts}
     />
   );
 }

@@ -40,12 +40,13 @@ if (!teacher) {
     });
 
     return NextResponse.json({
-      referralCode:     teacher.referralCode,
-      referralPoints:   teacher.referralPoints  ?? 0,
-      freeMonthsEarned: teacher.freeMonthsEarned ?? 0,
-      totalReferrals,
-      pointsToNextFree: Math.max(0, 100 - ((teacher.referralPoints ?? 0) % 100)),
-    });
+  referralCode:      teacher.referralCode,
+  referralPoints:    teacher.referralPoints   ?? 0,
+  freeMonthsEarned:  teacher.freeMonthsEarned ?? 0,
+  pendingFreeMonths: teacher.pendingFreeMonths ?? 0,
+  totalReferrals,
+  pointsToNextFree:  Math.max(0, 100 - ((teacher.referralPoints ?? 0) % 100)),
+});
   } catch (err: any) {
     console.error('[referral/generate]', err);
     return NextResponse.json({ error: 'Failed' }, { status: 500 });
