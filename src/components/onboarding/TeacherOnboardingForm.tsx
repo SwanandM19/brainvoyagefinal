@@ -350,7 +350,7 @@ export default function TeacherOnboardingForm({ email, defaultName, onBack, onSu
         </div>
 
         {/* Autopay Checkbox - Glassmorphic Card */}
-        <div className="bg-gradient-to-br from-orange-50 to-white border border-orange-100 rounded-2xl p-5 shadow-sm hover:shadow-md transition-all duration-200">
+        {/* <div className="bg-gradient-to-br from-orange-50 to-white border border-orange-100 rounded-2xl p-5 shadow-sm hover:shadow-md transition-all duration-200">
           <label className="flex items-start gap-4 cursor-pointer">
             <div className="mt-1">
               <input
@@ -376,7 +376,7 @@ export default function TeacherOnboardingForm({ email, defaultName, onBack, onSu
               </div>
             </div>
           </label>
-        </div>
+        </div> */}
 
         <button
           type="submit"
