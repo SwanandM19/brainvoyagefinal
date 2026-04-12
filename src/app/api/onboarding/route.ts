@@ -192,14 +192,14 @@ export async function POST(req: NextRequest) {
         { _id: user._id },
         {
           $set: {
-            name:                name.trim(),
-            role:                'student',
+            name: name.trim(),
+            role: 'student',
             studentClass,
             studentBoard,
-            school:              school?.trim()  ?? '',
-            city:                city?.trim()    ?? '',
-            state:               state?.trim()   ?? '',
-            bio:                 bio?.trim()     ?? '',
+            school: school?.trim() ?? '',
+            city: city?.trim() ?? '',
+            state: state?.trim() ?? '',
+            bio: bio?.trim() ?? '',
             onboardingCompleted: true,
           },
         }
@@ -230,18 +230,18 @@ export async function POST(req: NextRequest) {
         { _id: user._id },
         {
           $set: {
-            name:                name.trim(),
-            role:                'teacher',
-            teacherStatus:       'pending',
-            bio:                 bio?.trim()            ?? '',
-            phone:               phone?.trim()          ?? '',
-            city:                city?.trim()            ?? '',
-            state:               state?.trim()           ?? '',
+            name: name.trim(),
+            role: 'teacher',
+            teacherStatus: 'pending',
+            bio: bio?.trim() ?? '',
+            phone: phone?.trim() ?? '',
+            city: city?.trim() ?? '',
+            state: state?.trim() ?? '',
             subjects,
             classes,
             boards,
-            qualifications:      qualifications?.trim() ?? '',
-            yearsOfExperience:   Number(yearsOfExperience) || 0,
+            qualifications: qualifications?.trim() ?? '',
+            yearsOfExperience: Number(yearsOfExperience) || 0,
             onboardingCompleted: true,
           },
         }
@@ -252,18 +252,18 @@ export async function POST(req: NextRequest) {
         {
           $setOnInsert: {
             userId: String(user._id),
-            email:  user.email,
+            email: user.email,
           },
           $set: {
-            name:              name.trim(),
-            bio:               bio?.trim()            ?? '',
-            city:              city?.trim()            ?? '',
-            state:             state?.trim()           ?? '',
+            name: name.trim(),
+            bio: bio?.trim() ?? '',
+            city: city?.trim() ?? '',
+            state: state?.trim() ?? '',
             subjects,
             classes,
             boards,
             yearsOfExperience: Number(yearsOfExperience) || 0,
-            teacherStatus:     'pending',
+            teacherStatus: 'pending',
             // ✅ Always update usedReferralCode — not just on insert
             ...(refCode ? { usedReferralCode: refCode } : {}),
           },
@@ -276,25 +276,25 @@ export async function POST(req: NextRequest) {
         try {
           const alreadyCredited = await Referral.findOne({
             referredUserId: String(user._id),
-            status:         'credited',
+            status: 'credited',
           });
 
           if (!alreadyCredited) {
             const referrer = await Teacher.findOne({ referralCode: refCode });
 
             if (referrer) {
-              referrer.referralPoints = (referrer.referralPoints ?? 0) + 50;
+              referrer.referralPoints = (referrer.referralPoints ?? 0) + 1;
               await referrer.save();
 
               await Referral.create({
-                referrerId:     referrer.userId,
+                referrerId: referrer.userId,
                 referredUserId: String(user._id),
-                code:           refCode,
-                status:         'credited',
-                pointsAwarded:  50,
+                code: refCode,
+                status: 'credited',
+                pointsAwarded: 1,
               });
 
-              console.log(`[ONBOARDING] ✅ Referral credited: 50pts to ${referrer.userId}`);
+              console.log(`[ONBOARDING] ✅ Referral credited: 1pt to ${referrer.userId}`);
             } else {
               console.log(`[ONBOARDING] ⚠️ No teacher found with referralCode: ${refCode}`);
             }

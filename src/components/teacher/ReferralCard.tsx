@@ -121,7 +121,7 @@ const canRedeem   = stats.referralPoints >= 100 && isSubActive;
         </div>
         <div>
           <h3 className="text-white font-extrabold text-sm">Refer & Earn Free Months</h3>
-          <p className="text-white/75 text-[11px]">50 pts per referral · 100 pts = ₹200 saved</p>
+          <p className="text-white/75 text-[11px]">1 pt per referral · 100 pts = ₹200 saved</p>
         </div>
       </div>
 
